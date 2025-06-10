@@ -1,0 +1,33 @@
+[project]
+name = "rent-app"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "boto3>=1.38.16",
+    "jinja2>=3.1.6",
+]
+
+# We're using Poe as a task runner. See:
+# https://poethepoet.natn.io/index.html
+# https://github.com/astral-sh/uv/issues/5903#issuecomment-2814231089
+[tool.poe.tasks]
+[tool.poe.tasks.run]
+    shell = "STAGE=prod ISLOCAL=true python app.py"
+    cwd = "./lambda"
+[tool.poe.tasks.real_run]
+    shell = "STAGE=prod ISLOCAL=false python app.py"
+    cwd = "./lambda"
+[tool.poe.tasks.apply]
+    shell = "terraform apply -auto-approve"
+    cwd = "./terraform"
+[tool.poe.tasks.dev_env]
+    shell = "STAGE=prod ISLOCAL=false ipython -ci \"import sqlite3; db = sqlite3.connect('database.db')\""
+    cwd = "./lambda"
+
+[dependency-groups]
+dev = [
+    "ipython>=9.2.0",
+    "types-boto3[s3]>=1.38.16",
+]

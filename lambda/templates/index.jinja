@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="vanilla.css">
+    <title>Document</title>
+</head>
+<body>
+    <h1>MONTH</h1>
+    <form>
+        <table >
+            <tr>
+                <th>Unit#</th>
+                <th>Paid in Full</th>
+                <th>$Due</th>
+                <th>$Remaining</th>
+                <th>$Paid</th>
+            </tr>
+            {% for unit in rents %}
+            <tr>
+                <td>{{ unit.name }}</td>
+                <td><input type="checkbox"/></td>
+                <td>{{ unit.due }}</td>
+                <td>{{ unit.remaining }}</td>
+                <td><input type="number" name="{{ unit.name }}" value="{{ unit.remaining }}"/></td>
+            </tr>
+            {% endfor %}
+        </table>
+    </form>
+</body>
+</html>
