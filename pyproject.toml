@@ -23,8 +23,9 @@ dependencies = [
     shell = "terraform apply -auto-approve"
     cwd = "./terraform"
 [tool.poe.tasks.dev_env]
-    shell = "STAGE=prod ISLOCAL=false ipython -ci \"import sqlite3; db = sqlite3.connect('database.db')\""
+    cmd = "ipython -c \"from os import environ as env; env['STAGE'] = 'prod'; env['ISLOCAL'] = 'true'; import sqlite3; db = sqlite3.connect('database.db')\" -i"
     cwd = "./lambda"
+    use_exec = true
 
 [dependency-groups]
 dev = [
