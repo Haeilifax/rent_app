@@ -48,3 +48,90 @@
     1. Check the requested path from the event, serve our base page in response to a GET to the root, and serve vanilla.css in response to the /stylesheet.css path
     2. Update the template to reference stylesheet.css instead of vanilla.css
     3. Update the name of the vanilla.css file to stylesheet.css
+
+## 2025-06-11
+
+Yesterday was a big success -- the prompting went swimmingly, and Claude made the updates appropriately. We achieved both our goals for the day. I have not yet pushed the updates to AWS, but that shouldn't be an issue (okay, this might be an issue -- we'll need to actually test that the updates work). So today, we'll push up the updates to AWS, test, maybe do something about the fact that it's still really ugly? (And honestly kinda worse with the new stylesheet, maybe we should find a better one, or let Claude just generate one). We should also add in POST requests.
+
+Goals:
+    -[X] Push updates to AWS
+    -[X] Test updates
+    -[X] Make any fixes needed
+    -[X] Figure out POST request requirements
+    -[X] Prompt Claude to add them
+
+- Pushing updates should be easy -- we'll just use our poe command
+- Testing will just be opening the page and confirming it looks appropriately different (and awful)
+- Fixes will be based on testing
+- POST request requirements will be the fun thing for the day
+- We need to
+    - Update the form to have a submit button
+        - We will want to use the PRG (POST-Redirect-GET) pattern to avoid double submissions if the page is refreshed
+    - Process POST requests in the Lambda handler
+    - A POST request should be the relevant information to create multiple CollectedRent records
+        - We need to design the JSON contract for it
+        - We need to design the SQL command
+            - We'll want to use the executemany function in the sqlite3 Python module to batch add records
+        - I'm not a huge fan of how it's currently set up, that we're going to log rents that are collected, rather than recording the updated state of the world
+            - Updated state of the world is nice, because we know that we're only going to have a single writer (concurrency = 1), so one of the benefits of having these one at a time additions is moot
+                - That is, if we had multiple writers and we didn't have guaranteed consistency, one at a time additions would allow us to keep the updates atomic, vs state of the world could have inconsistencies
+            - Updated state of the world allows us to have idempotent updates -- that's harder to do with one-at-a-time
+            - I'd really like to have idempotent updates -- idempotency eliminates a whole category of issues
+            - Perhaps we could have idempotency by passing the expected value of the amount due?
+                - This might still be an issue if the client is incorrect -- like if the client had gone back to a previous page, and the user still wanted to add in a rent. The user doesn't care that the number on the page is wrong, they just want to add in the fact that they gathered a rent
+            - Perhaps we can just show a log of collected rents to the user -- we expect there to only be a few per unit per month, so showing the rents that were collected would allow the user to validate and modify any CollectedRent records
+    - Okay! So we will add an additional requirement, that we will show the CollectedRent records on the UI, and allow the user to edit or delete (soft delete) records from the UI
+
+- Ideating done, let's execute.
+- Pushing up updates now
+- Testing success, it looks new and gross
+
+Okay, POST request requirements:
+1. Update the UI with a submit button that will submit the form, then redirect the user back to the original page
+2. Update the UI with a hidden input to uniquely identify each Lease that a CollectedRent record should be added to
+3. Extract the db and s3 connection code into a function that will connect to s3 and the database a single time, cache them, and then just return the cached database and s3
+4. Update the Lambda handler in app.py to handle POST requests by
+    1. Using our new function we made above that caches our db and s3 connection to ensure that we have the database and s3 connections available
+    2. Parsing the body of the request as JSON
+    3. Update the database using a parameterized query, and all of the units that have a non-zero collected rent in the submitted form (there may be multiple)
+    4. Store the db back to s3
+
+We should also think about wrapping our db connection in a class that abstracts out the pull and store back to s3 process -- this would be a great place to also put our caching code, so that we can let the class lazy load and just use it regardless of warm or cold state.
+
+Prompted Claude with the above requirements -- I was a little bit wrong about what was needed, I had already considered linking the forms in the UI back to the units, but sadly I used the unit.name instead of the lease id -- Claude got a little bit confused and is not doing great on editing index.jinja. I'll have to go in manually and clean it up.
+
+I also need to put back in the comment about why we're allowed to treat the db like this (downloading and uploading it from S3 like we are without actually caring about the difference between the local db file and the one in S3)
+
+[X] Need to also remove the lease_ naming that Claude added in index.jinja -- it's unnecessary and adds an extra step to processing
+
+Some small asks to Claude, and I like index.jinja again. I have some concerns about the actual logic that was implemented for the amount (why are we calling `float` on the amount? It should already be a number, if we're trying to validate let's do some real validation instead).
+
+## 2025-06-13
+
+Okay, back in this.
+
+We did not commit our work from last time. Should we? I like to have a known good state, but WIP commits at the end of every touch would also be very useful. Most likely, what we should do is a branch and merge pattern. I'm going to implement that here, and we will start doing feature branches (even though we're kinda still pre-MVP, which is where I would normally want to do that).
+
+-[] Create new branch for POST requests
+-[] Commit work from previous day
+
+We completed our goals from yesterday, in that we determined POST request reqs and prompted Claude for them -- we have not, however, really taken a good look at the updates, and we still need to test
+
+-[] Review Claude updates (can view as a PR concept)
+-[] Test Claude updates
+
+Considering the way we're playing with this, it may be valid to add in an additional, dev stage, to be able to freely deploy and test without being concerned about affecting actual functionality -- however, we still don't have any users, so it's premature at this point to be precious about our "prod" stage. We'll update to have a dev stage once changes actually matter.
+
+Does it make sense to commit this lab notebook to the dev branch? I think that it makes the most sense to always commit this to master, but that's... kinda not how git typically works. Is this a space that I should be looking into git-worktrees? My understanding is that they are the go-to for AI Agent prompting, but I don't know much about them. I've also heard that they're a bear to set up. We'll throw that in as a goal, but it might not be a today goal
+
+-[] (stretch) Research git-worktrees
+-[] (stretch) Write brief on git-worktrees
+-[] (stretch) Set up git-worktrees
+
+Could I just have Claude do the research and brief for me?
+
+-[X] Prompt Claude to research and write up documentation describing git-worktrees. Include how to set them up in a Linux environment, and how best to utilize them in an AI agent coding setup. Include links to references.
+
+Okay, Claude is working on that. We'll see how much that costs me, and how useful it is. Honestly, this may be a place where it's more useful just to google for it, because the MO of the internet is just uploading AI slop for free...
+
+I'm going to commit this journal to master, then create a dev branch for us -- if worktrees is good and useful, we'll use it after this session. Claude finished -- it cost 10 cents to create the guide.
