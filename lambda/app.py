@@ -7,6 +7,11 @@ from pathlib import Path
 import boto3
 from jinja2 import Environment, PackageLoader, select_autoescape
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from types_boto3_s3.service_resource import S3ServiceResource
+
 # Key off single environment variable to determine configuration
 # Migrate to config file if this section gets unwieldy
 VALID_STAGES = ["prod"]
@@ -19,33 +24,30 @@ db = None
 s3_client = None
 
 
-def get_db_and_s3():
+def get_db_and_s3() -> tuple[sqlite3.Connection, S3ServiceResource]:
     """Get cached database and s3 connections, initializing them if needed
 
-    # We're lazy loding the s3 client and the database -- we can just dummy
-     # store the database in s3 and pull it out here because we're guaranteeing
-     # concurrency = 1 -- we will never have more than one lambda instance
-     # attempting to interact with this database, so it doesn't matter that
-     # we're just uploading an downloading an entire file (instead of doing
-     # some sort of intelligent access)
+    We're lazy loding the s3 client and the database -- we can just dummy
+    store the database in s3 and pull it out here because we're guaranteeing
+    concurrency = 1 -- we will never have more than one lambda instance
+    attempting to interact with this database, so it doesn't matter that
+    we're just uploading an downloading an entire file (instead of doing
+    some sort of intelligent access)
     """
     global db, s3_client
 
+    if s3_client is None:
+        s3_client = boto3.resource("s3")
     if db is None:
         if ISLOCAL:
             db_location = "../database.db"
         else:
-            if s3_client is None:
-                s3_client = boto3.resource("s3")
             # /tmp is a writable location on lambda (unlike /var, where our cwd is)
             db_location = "/tmp/database.db"
             s3_client.Object(BUCKET_NAME, "database.db").download_file(db_location)
 
         db = sqlite3.connect(db_location)
         db.row_factory = sqlite3.Row
-
-    if not ISLOCAL and s3_client is None:
-        s3_client = boto3.resource("s3")
 
     return db, s3_client
 
