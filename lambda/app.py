@@ -19,6 +19,37 @@ db = None
 s3_client = None
 
 
+def get_db_and_s3():
+    """Get cached database and s3 connections, initializing them if needed
+
+    # We're lazy loding the s3 client and the database -- we can just dummy
+     # store the database in s3 and pull it out here because we're guaranteeing
+     # concurrency = 1 -- we will never have more than one lambda instance
+     # attempting to interact with this database, so it doesn't matter that
+     # we're just uploading an downloading an entire file (instead of doing
+     # some sort of intelligent access)
+    """
+    global db, s3_client
+
+    if db is None:
+        if ISLOCAL:
+            db_location = "../database.db"
+        else:
+            if s3_client is None:
+                s3_client = boto3.resource("s3")
+            # /tmp is a writable location on lambda (unlike /var, where our cwd is)
+            db_location = "/tmp/database.db"
+            s3_client.Object(BUCKET_NAME, "database.db").download_file(db_location)
+
+        db = sqlite3.connect(db_location)
+        db.row_factory = sqlite3.Row
+
+    if not ISLOCAL and s3_client is None:
+        s3_client = boto3.resource("s3")
+
+    return db, s3_client
+
+
 def lambda_handler(event, context):
     global db
     global s3_client
@@ -40,25 +71,7 @@ def lambda_handler(event, context):
             # Serve main page
             # TODO make this passed by client
             month = datetime.datetime.now().isoformat()
-            # We're lazy loding the s3 client and the database -- we can just dummy
-            # store the database in s3 and pull it out here because we're guaranteeing
-            # concurrency = 1 -- we will never have more than one lambda instance
-            # attempting to interact with this database, so it doesn't matter that
-            # we're just uploading an downloading an entire file (instead of doing
-            # some sort of intelligent access)
-            if db is None:
-                if ISLOCAL:
-                    db_location = "../database.db"
-                else:
-                    if s3_client is None:
-                        s3_client = boto3.resource("s3")
-                    # /tmp is a writable location on lambda (unlike /var, where our cwd is)
-                    db_location = "/tmp/database.db"
-                    s3_client.Object(BUCKET_NAME, "database.db").download_file(
-                        db_location
-                    )
-                db = sqlite3.connect(db_location)
-                db.row_factory = sqlite3.Row
+            db, _ = get_db_and_s3()
             cur = db.cursor()
             cur.execute(Path("get_rents.sql").read_text(), {"month": month})
             rents = cur.fetchall()
@@ -75,6 +88,49 @@ def lambda_handler(event, context):
             }
     elif method == "POST":
         print("POST Request")
+        if path == "/":
+            # Handle rent collection form submission
+            db, s3_client = get_db_and_s3()
+
+            # Parse form data from request body
+            import urllib.parse
+
+            body = event.get("body", "")
+            form_data = urllib.parse.parse_qs(body)
+
+            # Extract lease rent collections - look for lease_<id> fields with non-zero values
+            cur = db.cursor()
+            month = datetime.datetime.now().isoformat()
+            collected_on = datetime.date.today().isoformat()
+
+            # Collect all records to insert
+            records_to_insert = []
+            for lease_id, values in form_data.items():
+                if values and values[0]:
+                    amount = float(values[0])
+
+                    if amount > 0:  # Only insert records for non-zero amounts
+                        records_to_insert.append(
+                            (lease_id, amount, month, collected_on)
+                        )
+
+            # Batch insert all records
+            if records_to_insert:
+                cur.executemany(
+                    """INSERT INTO CollectedRent (lease, amount, collected_for, collected_on) 
+                       VALUES (?, ?, date(?, 'start of month'), ?)""",
+                    records_to_insert,
+                )
+                db.commit()
+
+            # Upload updated database back to S3 if not local
+            if not ISLOCAL:
+                s3_client.Object(BUCKET_NAME, "database.db").upload_file(
+                    "/tmp/database.db"
+                )
+
+            # Redirect back to GET page (PRG pattern)
+            return {"statusCode": 302, "headers": {"Location": "/"}, "body": ""}
     return {"statusCode": 200, "body": json.dumps(event)}
 
 
