@@ -161,3 +161,38 @@ It didn't, and I've terminated that session -- I've heard that allowing the AI t
 It then properly created a todo list of the different things to comment, and followed through on each of them. This seems to have worked appropriately, and we now have a lovely document recording how the event object is structured. All for the low, low cost of another 35 cents.
 
 Christ. Did I really just spend most of a dollar on this crappy little jsonc file?
+
+## 2025-06-14
+
+I'm going to set up worktrees, because I'd really like them for this notebook -- I just commited the notes from yesterday, and then when I switch back to the feature branch they were gone (duh).
+
+I appreciate the doc that Claude made, but I dislike how much time is spent on the "how" rather than the "why". There's a lot of bash commands, rather than rationale and explanation. It _is_ nice that there are commands specific to the project at hand, and it's tailored exactly for me. But also, I don't how much to trust it. I would rather have the official docs in front of me, or a human who is going to be wrong in predictable ways, but I don't really know how to predict when Claude is wrong or going to be wrong.
+
+Official docs: https://git-scm.com/docs/git-worktree
+
+Claude very much likes the `-b` option, which creates a new branch when you're making the worktree. Can you make it create the folder as well? Or do you have to `mkdir` first?
+
+(to note, you can make a worktree off any commit or tag -- branches are just convenience for them)
+
+git will also default auto-create a branch if you don't pass it a name, but it will use the pathname of the directory, which is probably not going to be exactly what you want
+
+Worktrees actually seem... really simple? I'm not sure where I had heard that they were complicated, but this seems bog-simple and something that I wish I had been using for ages? (they were just added in 2019, so not unreasonable that I haven't used them)
+
+All the examples I've seen so far imply that worktrees should be outside the git directory of the main-worktree -- is this a requirement? Does this make life easier? I guess there's no good way to exclude the worktrees via .gitignore (actually, yes there is -- the branch name is unconnected to the path name).
+
+Okay, so idea -- make worktrees inside the main-worktree, with names of `worktree-{branchName}`. Add `worktree-*` to the .gitignore.
+- Claude says don't do this -- nested git structures might confuse commands.
+- It's so neat and clean that I'm going to look into it a little harder anyway
+
+Okay, confirmed, _not an issue_. Also, just learned a new tidbit about the .git/info/exclude file, which is a local only .gitignore? I've definitely run into situations where I've put things that would only really be seen in my local environment into .gitignore to have them not show as untracked, so this will be appreciated
+
+Annnnnnnd done??? That was stupid easy
+`git worktree add worktree-feature_AddPOSTRequest/ feature/AddPOSTRequests`
+`nvim .git/info/exclude` (added `worktree-*`)
+`cd worktree-feature_AddPOSTRequest/`
+
+Now I can just use that folder as my work space for actual updates
+
+Hmm. Okay, looking at Claude's updates a little bit, he imported something in the body of a function -- obv we need this to go at the top of the file instead (there's no reason in particular to lazy-load it, it's standard lib), but what's the best way? I think it's got to be a comment placed in the text of the code, maybe using the `AIDEV` format we saw previously?
+
+I don't think that's going to be the way. To be continued next time.
