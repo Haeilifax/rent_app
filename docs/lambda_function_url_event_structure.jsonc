@@ -1,0 +1,53 @@
+// Taken from: https://docs.aws.amazon.com/lambda/latest/dg/urls-invocation.html
+{
+  "version": "2.0", // The payload format version for this event. Lambda function URLs currently support payload format version 2.0.
+  "routeKey": "$default", // Function URLs don't use this parameter. Lambda sets this to $default as a placeholder.
+  "rawPath": "/my/path", // The request path. For example, if the request URL is https://{url-id}.lambda-url.{region}.on.aws/example/test/demo, then the raw path value is /example/test/demo.
+  "rawQueryString": "parameter1=value1&parameter1=value2&parameter2=value", // The raw string containing the request's query string parameters. Supported characters include a-z, A-Z, 0-9, ., _, -, %, &, =, and +.
+  "cookies": [ // An array containing all cookies sent as part of the request.
+    "cookie1",
+    "cookie2"
+  ],
+  "headers": { // The list of request headers, presented as key-value pairs.
+    "header1": "value1",
+    "header2": "value1,value2"
+  },
+  "queryStringParameters": { // The query parameters for the request. For example, if the request URL is https://{url-id}.lambda-url.{region}.on.aws/example?name=Jane, then the queryStringParameters value is a JSON object with a key of name and a value of Jane.
+    "parameter1": "value1,value2",
+    "parameter2": "value"
+  },
+  "requestContext": { // An object that contains additional information about the request, such as the requestId, the time of the request, and the identity of the caller if authorized via AWS Identity and Access Management (IAM).
+    "accountId": "123456789012", // The AWS account ID of the function owner.
+    "apiId": "<urlid>", // The ID of the function URL.
+    "authentication": null, // Function URLs don't use this parameter. Lambda sets this to null.
+    "authorizer": { // An object that contains information about the caller identity, if the function URL uses the AWS_IAM auth type. Otherwise, Lambda sets this to null.
+        "iam": {
+                "accessKey": "AKIA...", // The access key of the caller identity.
+                "accountId": "111122223333", // The AWS account ID of the caller identity.
+                "callerId": "AIDA...", // The ID (user ID) of the caller.
+                "cognitoIdentity": null, // Function URLs don't use this parameter. Lambda sets this to null or excludes this from the JSON.
+                "principalOrgId": null, // The principal org ID associated with the caller identity.
+                "userArn": "arn:aws:iam::111122223333:user/example-user", // The user Amazon Resource Name (ARN) of the caller identity.
+                "userId": "AIDA..." // The user ID of the caller identity.
+        }
+    },
+    "domainName": "<url-id>.lambda-url.us-west-2.on.aws", // The domain name of the function URL.
+    "domainPrefix": "<url-id>", // The domain prefix of the function URL.
+    "http": { // An object that contains details about the HTTP request.
+      "method": "POST", // The HTTP method used in this request. Valid values include GET, POST, PUT, HEAD, OPTIONS, PATCH, and DELETE.
+      "path": "/my/path", // The request path. For example, if the request URL is https://{url-id}.lambda-url.{region}.on.aws/example/test/demo, then the path value is /example/test/demo.
+      "protocol": "HTTP/1.1", // The protocol of the request.
+      "sourceIp": "123.123.123.123", // The source IP address of the immediate TCP connection making the request.
+      "userAgent": "agent" // The User-Agent request header value.
+    },
+    "requestId": "id", // The ID of the invocation request. You can use this ID to trace invocation logs related to your function.
+    "routeKey": "$default", // Function URLs don't use this parameter. Lambda sets this to $default as a placeholder.
+    "stage": "$default", // Function URLs don't use this parameter. Lambda sets this to $default as a placeholder.
+    "time": "12/Mar/2020:19:03:58 +0000", // The timestamp of the request.
+    "timeEpoch": 1583348638390 // The timestamp of the request, in Unix epoch time.
+  },
+  "body": "Hello from client!", // The body of the request. If the content type of the request is binary, the body is base64-encoded.
+  "pathParameters": null, // Function URLs don't use this parameter. Lambda sets this to null or excludes this from the JSON.
+  "isBase64Encoded": false, // TRUE if the body is a binary payload and base64-encoded. FALSE otherwise.
+  "stageVariables": null // Function URLs don't use this parameter. Lambda sets this to null or excludes this from the JSON.
+}
