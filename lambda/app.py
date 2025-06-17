@@ -3,6 +3,7 @@ from os import environ
 import sqlite3
 import datetime
 from pathlib import Path
+import urllib.parse
 
 import boto3
 from jinja2 import Environment, PackageLoader, select_autoescape
@@ -95,12 +96,9 @@ def lambda_handler(event, context):
             db, s3_client = get_db_and_s3()
 
             # Parse form data from request body
-            import urllib.parse
-
             body = event.get("body", "")
             form_data = urllib.parse.parse_qs(body)
 
-            # Extract lease rent collections - look for lease_<id> fields with non-zero values
             cur = db.cursor()
             month = datetime.datetime.now().isoformat()
             collected_on = datetime.date.today().isoformat()
@@ -124,12 +122,12 @@ def lambda_handler(event, context):
                     records_to_insert,
                 )
                 db.commit()
-
-            # Upload updated database back to S3 if not local
-            if not ISLOCAL:
-                s3_client.Object(BUCKET_NAME, "database.db").upload_file(
-                    "/tmp/database.db"
-                )
+                
+                # Upload updated database back to S3 if not local
+                if not ISLOCAL:
+                    s3_client.Object(BUCKET_NAME, "database.db").upload_file(
+                        "/tmp/database.db"
+                    )
 
             # Redirect back to GET page (PRG pattern)
             return {"statusCode": 302, "headers": {"Location": "/"}, "body": ""}
