@@ -30,5 +30,12 @@ dependencies = [
 [dependency-groups]
 dev = [
     "ipython>=9.2.0",
+    "pytest>=8.4.0",
     "types-boto3[s3]>=1.38.16",
+]
+
+# Added as recommended in https://docs.pytest.org/en/stable/explanation/goodpractices.html#tests-outside-application-code
+[tool.pytest.ini_options]
+addopts = [
+    "--import-mode=importlib",
 ]
