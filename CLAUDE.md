@@ -49,7 +49,7 @@ This is a serverless rent collection application with the following key componen
 
 ### Data Flow for POST Requests
 1. Lambda cold start downloads database.db from S3
-2. Parse body of `event` as JSON
+2. Parse body of `event` as www-form-urlencoded name=value pairs
 3. Update CollectedRent table with new record of the rent(s) collected.
 4. Store the updated SQLite db to S3
 5. Redirect the requester to GET the page again (PRG flow)
