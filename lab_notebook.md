@@ -105,6 +105,7 @@ I also need to put back in the comment about why we're allowed to treat the db l
 [X] Need to also remove the lease_ naming that Claude added in index.jinja -- it's unnecessary and adds an extra step to processing
 
 Some small asks to Claude, and I like index.jinja again. I have some concerns about the actual logic that was implemented for the amount (why are we calling `float` on the amount? It should already be a number, if we're trying to validate let's do some real validation instead).
+- NB: See header 2025-06-17 for why we're using float
 
 ## 2025-06-13
 
@@ -196,3 +197,218 @@ Now I can just use that folder as my work space for actual updates
 Hmm. Okay, looking at Claude's updates a little bit, he imported something in the body of a function -- obv we need this to go at the top of the file instead (there's no reason in particular to lazy-load it, it's standard lib), but what's the best way? I think it's got to be a comment placed in the text of the code, maybe using the `AIDEV` format we saw previously?
 
 I don't think that's going to be the way. To be continued next time.
+
+## 2025-06-17
+
+It's so nice that this is just directly in the master branch, without me having to be concerned about it
+
+Also, showing the utility of this notebook, I don't really remember current context, and I'm going to look back over my notes to figure out what's going on, what I was planning to do, and what I need to work on
+
+I don't think I ever confirmed whether git-worktree will automatically create a new folder -- going to test now
+
+-[X] Test if git-worktree creates a folder when you run it
+
+Confirmed, it does automatically create the folder
+
+I don't think it's worth it to create the scripts that Claude suggests (probably as poe tasks), at least for right now -- I'm not going to be creating them frequently enough, and I'm not going to have Claude creating them, so it's best that I do it manually and learn
+
+In order to create a new worktree and branch, run
+
+`git worktree add -b {branch-name} worktree-{branch-name}`
+
+In order to remove a branch, delete the folder (can only be done once folder is clean, that is no pending git changes or untracked files) and run
+
+`git worktree remove {branch-name}`
+
+Goals for today:
+-[X] Finish reviewing Claude's code
+-[] Test Claude's code
+-[] Push up to GitHub
+
+We've re-set up our Neovim windows -- it's annoying that I can't just have them all spring back to life when they get closed. Should I start using session, or start using tmux?
+
+What's the best way to review changes? Obviously, once I push things up to GitHub, I can make a pull request and look there, but that doesn't make me super happy -- I'd love to have a way to review changes locally, akin to GitLens in VSCode.
+- Maybe I just use the diff tool? Since I'm using worktrees, it's incredibly easy to just run diff (or look for a prettier diff tool)
+- Is Magit an option? I don't really know what it does, but people are very big on it
+- I'll look at other options as well
+
+-[X] Look into using Magit / another local-first PR tool
+
+[Magit homepage](https://magit.vc/)
+- Magit is a text interface to git
+- Replacement / missing link between CLI and GUI git interfaces
+- Just runs git commands under the hood
+- I've seen Magit recommended pretty broadly in the past
+- Emacs-based? How annoying will it be to use it without necessarily using emacs? Will I need to learn new bindings? Can I incorporate it into NeoVim?
+
+[Magit, the magical git interface](https://emacsair.me/2017/09/01/the-magical-git-interface/)
+
+- I'm a little bit uncomfortable with Magit being mostly "mnemonics" (which reads as hotkeys to me), because the discoverability is so much worse in a lot of these cases
+    - I'm running into a lot with Vim where I know what I want to do, but actually executing requires me to know about multiple keys that do things I don't know, and I don't know of their existence
+    - I would love to just be able to type into a command "thing I want to do", and have a key sequence and explanation spat out at me (with optional "just run it" as well)
+    - Space for LLM? Maybe I should build a plugin (or find one)
+- All information is actionable -- no "read-only" buffer
+    - Sounds similar to the file viewers in NeoVim (I'm using mini.files right now, but I think others work similarly), where you create new files but just adding a new line, move files by cut and paste, etc
+- Magit is a nearly complete Git interface
+    - Nearly anything that can be done with the CLI can be done with Magit
+- One thing I'd really like from Magit is easily dealing with hunks (which I was able to do with VSCode, but seems like a bear through the CLI)
+-
+
+(I need to set up the correct mechanism to exclude counts from gj and gk remapping, because relative line numbers make it so much easier to use)
+
+[Magit Walkthrough](https://emacsair.me/2017/09/01/magit-walk-through/)
+- Magit has ability to easily stage hunks
+- "Magit requires a little knowledge of emacs, but not a lot"
+    - Yeah, but do I believe that?
+    - Can I have Magit but with vim bindings?
+- There's a discoverability window, "popup of popups" under "?"
+- Ability to commit easily in Magit
+- Ability to amend previous commits
+- Rebase, with additional useful features
+- Merge features exist, but aren't dove into heavily -- `preview merge` is an option (how nice is it?)
+
+Amazingly, I don't think I'm going to use Magit
+- Seems annoying to use because it requires some emacs knowledge
+- Seems kinda bulky?
+
+Just installed tig, which is a command line tool that seem to do a lot of similar things in terms of interacting with git (without necessarily being an editor as well)
+
+[tig Homepage](https://jonas.github.io/tig/)
+
+Let's start up updates for Claude to make to his PR:
+
+1. Please update the import on line 104 to be at the top of the file
+2. Remove comment on line 109 that no longer makes sense
+3. Update the block at line 169 to only upload to S3 if there are changes to the database (in addition to the ISLOCAL criterion)
+
+(We've just learned that tig gives us all wrong line numbers...)
+
+Let's also start updates that I should make:
+1. Make it clear in CLAUDE.md that all imports should be made at the top of the file, unless it's needed to be imported elsewhere for optimization
+
+Do we need to use urllib to parse qs? Submit button will submit as www-(something something something) -- google search says www-form-urlencoded, which is name=value and joined by ampersands (probably html-escaped as well?). parse_qs does parse exactly this (see https://docs.python.org/3/library/urllib.parse.html#urllib.parse.parse_qs). It will turn a www-form-urlencoded query string into a dictionary of name:value pairs
+
+Just noticed and recalled -- Python docs have GNU Terry Pratchett, we should make sure to add that
+
+-[] Add GNU Terry Pratchett header
+
+Ah -- we questioned the use of `float` earlier, and it's because we'll receive the form values as all strings (because of the www-form-urlencoded nature). Adding a note above
+
+I appreciate that Claude used the 'start of month' sqlite function on their(? How should I reference the AI?)
+
+tig seems to give all wrong line numbers in the status bar -- maybe it's giving us line numbers of the total diff? Or giving us line numbers in tig? But the first line of app.py is line 31 in the status bar...
+
+Okay, I've given the prompt above to Claude. Had to correct him because of the wrong line, and then corrected him again because he checked if records_to_insert was empty twice, instead of just doing the ISLOCAL check inside the original check. I also had him commit his work. Cost was 19 cents (one of my cheaper commits). I'm now going to test this
+
+I'm going to start off by testing locally, to ensure that there aren't any directly silly mistakes (like a sqlite error because the given SQL doesn't actually work). Assuming that looks good, I'm going to push it up to Lambda, and test directly against it there with the real page.
+
+OH, and let me make a goal to update my neovim
+
+-[] Update neovim to allow {count}j and {count}k to go by real lines, vs visual lines (currently they're always remapped to gj and gk)
+
+To test locally, I'm going to make a test payload with lease id and amount, and another one with a lease id and a blank amount
+- I expect the default to just be a blank, interpreted as an empty string, but we'll see when we go to deploy and do a real test.
+
+We're just cloning the event structure that we commented -- we don't have a jsonc parser in our python though... That's awkward.
+- I don't think I want to write a jsonc parser right now
+- The way I've interacted with jsonc parsing previously was a substitution that would remove all comments and trailing commas from the jsonc document, then parse it using the builtin json library
+- I'll just remove all comments manually using a vim replace, since this is test data (not dynamic)
+- Command: `:%s/ \?\/\/.*//g`
+
+Will we have an issue with passing a number as the lease id without directly converting it to an int in Python? It'll just be matching as a string
+- I believe so -- I'll give it a test, and then we'll prompt claude to update it
+
+I don't want to check the path in the POST request yet -- this is something that will be necessary eventually, but as of right now, it's just noise and makes our life worse. We'll likely not even have post requests go to the root path, instead differentiating them in a REST-y kind of manner (so that we can also manage the database via POST calls)
+
+Starting new prompt for Claude: (I'm setting these out by an extra newline so that I can just `yap` them)
+
+1. Please remove the path check on line 94
+
+I'd like to build an actual test infrastructure on this -- testing is something I'd like to be more experienced in, and it's a crucial component of using LLM's (according to many things I've read). Test Driven Development is also frequently called out as something useful for agent use, and is something that I was interested in previously.
+
+I'm going to research quickly testing frameworks for Python and pick one. Currently, I know of pytest (which I expect to use -- last I checked, it was feature-rich and easy to use), unittest (standardlib, previously known as nose I believe?), and hypothesis (property testing, I've toyed with it in the past but it needs the right project and setup to really shine).
+
+-[X] Research testing framework
+-[X] Add testing framework to project
+-[] Create initial unit test of POST request functionality with testing framework
+-[] Create unittest for GET /stylesheet.css (should return a css file)
+-[] Create unittest for GET / (should return an HTML file)
+
+Resources:
+https://docs.python.org/3/library/unittest.html
+
+llm question:
+`What 5 python testing frameworks are most popular, and which would be recommended for a new project being spun up?`
+- Recommends pytest
+- Calls out unittest, nose2, doctest, and hypothesis
+
+https://old.reddit.com/r/learnpython/comments/ugyqv4/unit_testing_best_practices_good_examples/
+- Recommends pytest
+- Wow reddit can be garbage, just the blind leading the blind
+- Thank you to the redditor calling out realpython
+
+https://realpython.com/python-testing/
+- Starts with description of testing
+- Calls out doctest
+- Brief descriptions of unittest, nose2, and pytest make it sound like pytest comes out the winner again
+    - Get to use default assert statments
+    - Fun little quality of life things like starting from first failed test
+    - plugin ecosystem
+- They suggest making a separate test directory (my plan too)
+- Call out Single Responsibility Principal -- we'll get to that once we have a product
+- Fixtures are reusable testing objects -- yes, we'll remember this
+    - With fixtures -- we should make sure we set up a new sqlite database every time
+- Tox!
+    - Been a while since I've heard that name
+    - It's not going to be relevant for us here, we aren't really trying to target anything other than our own server. Environment differences would look more like trying to run directly in a docker container mirroring the Lambda function enviornmnet
+- Linting
+    - I'm using ruff as a linter / autoformatter
+    - I should have either a git hook, or tell Claude to run it after every pass
+- Benchmarking
+    - Useful, but not right now -- we'll deal with that when we have a product that we actually care about performance on
+    - Not using cold-start lambdas is the fastest speed up we can get right now
+    - We can also benchmark inside of pytest using a plugin, so that'll be even easier -- `pytest-benchmark`
+- This is a really cool mock for requests: https://github.com/getsentry/responses
+    - Lets you mock API calls (like Apex had with their testing framework)
+
+Is it time to refactor, to pull the GET and POST request handlers out into their own methods, and possibly even break them down further from there? Maybe -- it would be gross to test using a whole integration test everything, but also we should be cognizent of how much time we're wasting before actually having a working product (yes, yes, it's a little late to be saying this now). We'll put it on the backburner
+
+We'll update these items with completion dates once we turn them into daily goals and complete them
+
+TODO: Refactor main method to not be a giant, undifferentiated pile of code. Break GET and POST request handlers out.
+TODO: Make response function to build success and error responses without manually building a gross dict
+
+How do I import my app? I don't really want to install it into my virtual env, and I don't really want to make a gross relative path.
+- Do I just take the hit and do an editable install? I don't think that sounds pleasant
+- I'd like a little magic please...
+
+Resources:
+https://docs.pytest.org/en/stable/getting-started.html
+https://docs.pytest.org/en/stable/explanation/goodpractices.html#goodpractices
+- Okay, it wants an editable install :(
+- Editable installs with uv are possible, I think?
+- Is there other advice for use with uv?
+- > For new projects, we recommend to use importlib import mode (see [which-import-mode](https://docs.pytest.org/en/stable/explanation/goodpractices.html#which-import-mode) for a detailed explanation).
+    - Minor benefits, unlikely to affect us (allows for having duplicate test file names across different test folders)
+    - But may as well
+- Calls out using a full src style layout
+    - Should we move to this? We're at a light level, with a lambda folder, but we can drop a layer (and need to update our terraform doc)
+    - Recommends [this blog post](https://blog.ionelmc.ro/2014/05/25/python-packaging/#the-structure%3E)
+        - I read this blog post already, years ago when I was first self-teaching
+- Shoot, with an editable install, will we need to wrestle with resources to get the templates to work correctly?
+
+QUESTION: with an editable install, will we need to wrestle with resources to get the templates to work correctly?
+
+https://docs.pytest.org/en/stable/explanation/anatomy.html
+
+> You can think of a test as being broken down into four steps:
+> - Arrange
+> - Act
+> - Assert
+> - Cleanup
+
+- Arrange you set up the dominoes
+- Act you knock them down
+- Assert you validate that they made the shape you want
+- Cleanup you pick everything up so the next test can start clean
+
