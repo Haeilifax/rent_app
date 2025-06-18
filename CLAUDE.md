@@ -56,3 +56,6 @@ This is a serverless rent collection application with the following key componen
 
 ## Type Checking
 Pyright is configured with relaxed type checking settings in `pyrightconfig.json`. Functions should be annotated with simple type hints, to show the general signature and catch high level typing errors. Any type should only be used when the type would be too complicated to show without using Protocols or other typing structures.
+
+## Notes
+- Do not review the lab_notebook.md file unless otherwise directed, as these notes are merely documenting the process and should not be necessary for your purposes
