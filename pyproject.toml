@@ -14,17 +14,15 @@ dependencies = [
 # https://github.com/astral-sh/uv/issues/5903#issuecomment-2814231089
 [tool.poe.tasks]
 [tool.poe.tasks.run]
-    shell = "STAGE=prod ISLOCAL=true python app.py"
-    cwd = "./lambda"
+    shell = "STAGE=prod ISLOCAL=true python -m rent_app.app"
 [tool.poe.tasks.real_run]
-    shell = "STAGE=prod ISLOCAL=false python app.py"
-    cwd = "./lambda"
+    shell = "STAGE=prod ISLOCAL=false python -m rent_app.app"
 [tool.poe.tasks.apply]
     shell = "terraform apply -auto-approve"
     cwd = "./terraform"
 [tool.poe.tasks.dev_env]
     cmd = "ipython -c \"from os import environ as env; env['STAGE'] = 'prod'; env['ISLOCAL'] = 'true'; import sqlite3; db = sqlite3.connect('database.db')\" -i"
-    cwd = "./lambda"
+    cwd = "./src/rent_app"
     use_exec = true
 
 [dependency-groups]

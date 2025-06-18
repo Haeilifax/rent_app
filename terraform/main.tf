@@ -37,7 +37,7 @@ variable "stage" {
 variable "lambda_root" {
   type        = string
   description = "The relative path to the source of the lambda"
-  default     = "../lambda"
+  default     = "../src/rent_app"
 }
 
 # Pull down the appropriate dependencies for our project

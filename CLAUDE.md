@@ -22,7 +22,7 @@ This is a serverless rent collection application with the following key componen
 - Uses WAL mode and optimized pragmas for performance
 - Schema defined in `database/ddl.sql`
 
-### Lambda Function (`lambda/app.py`)
+### Lambda Function (`src/rent_app/app.py`)
 - Single Lambda function handling GET/POST requests
 - GET requests render an HTML form showing rent collection status
 - Uses Jinja2 templates for HTML rendering
