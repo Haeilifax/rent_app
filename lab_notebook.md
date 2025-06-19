@@ -412,3 +412,45 @@ https://docs.pytest.org/en/stable/explanation/anatomy.html
 - Assert you validate that they made the shape you want
 - Cleanup you pick everything up so the next test can start clean
 
+## 2025-06-18
+
+I'm going to just dive into tests, instead of reading the whole docs first
+
+My understanding is that I'll want to do an editable install, and I'm concerned I may run into issues because the script needs a resource that might not be appropriately handled
+
+I'm going to start with an editable install -- I believe I can do this through uv
+`uv pip install -e .` (see https://stackoverflow.com/questions/79418598/how-to-do-install-my-custom-package-in-editable-mode-with-uv or better yet, https://docs.astral.sh/uv/pip/packages/#editable-packages)
+
+We immediately hit an error from running that command at the top level of the worktree -- automatic discovery found too many possibilities, and suggests setting up a find directive or a src layout
+
+We're moving to src layout -- I believe that will mean we don't have to do an editable install at all
+
+In order to move to src layout, we need to:
+
+1. Create a new `src` folder
+2. Move our lambda folder into the src folder
+3. Rename the lambda folder to 'rent_app' (for clarity)
+4. Update our terraform file (main.tf) wherever we reference the lambda structure (such as in the archive data resources)
+5. Update our poe tasks in pyproject.toml to reference the new structure
+    - Since we'll have the package installed as editable, we won't need the `cwd` property anymore
+6. Review the workspace to ensure there aren't other references that need to be updated
+
+Passing the above to claude
+
+Claude did a good job -- minor notes required to make sure he left in the cwd for one task that needed it, though honestly that's another thing that might have to change
+- (we're currently having the local test database inside the lambda folder, which is causing additional unnecessary size for our lambda pushes and may cause issues now that we're trying to run this as a package)
+
+I'm going to update the CLAUDE.md file to explicitly say not to review the lab_notebook.md file unless otherwise directed, as these notes are merely documenting the process and should not be necessary for his purposes
+
+-[X] Update CLAUDE.md to tell the AI not to look in lab_notebook.md unless directed
+
+I also just found that we're expecting to have a JSON body in event in our CLAUDE.md, rather than the actual (default) www-form-urlencoded. I've updated that as well
+
+Next step, editable install, and then tests
+
+-[X] Make editable install
+-[] Make most basic test to determine feasibility
+
+Editable install went smoothly
+
+Okay, most basic test possible. We're going to test getting the stylesheet, which is a GET event with path of `/stylesheet`
