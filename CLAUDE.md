@@ -6,8 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This project uses `uv` as the package manager and `poe` (poethepoet) as the task runner.
 
-- `uv run poe run` - Run the app locally (STAGE=prod ISLOCAL=true)
-- `uv run poe real_run` - Run the app simulating production (STAGE=prod ISLOCAL=false)
+- `uv run poe run` - Run the app locally (STAGE=prod ISLOCAL=database/database.db)
+- `uv run poe real_run` - Run the app simulating production (STAGE=prod)
 - `uv run poe dev_env` - Start interactive Python shell with database connection
 - `uv run poe apply` - Deploy infrastructure changes via Terraform
 

@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 # Migrate to config file if this section gets unwieldy
 VALID_STAGES = ["prod"]
 STAGE = environ["STAGE"]
-ISLOCAL = environ.get("ISLOCAL", "").lower() == "true"
+ISLOCAL = environ.get("ISLOCAL", "").lower()
 BUCKET_NAME = f"rentapp-{STAGE}-persistence-bucket"
 
 # Declare singletons -- we'll cache these here for faster warm invocations
@@ -43,7 +43,7 @@ def get_db_and_s3() -> tuple[sqlite3.Connection, S3ServiceResource]:
         s3_client = boto3.resource("s3")
     if db is None:
         if ISLOCAL:
-            db_location = "../database.db"
+            db_location = ISLOCAL
         else:
             # /tmp is a writable location on lambda (unlike /var, where our cwd is)
             db_location = "/tmp/database.db"
