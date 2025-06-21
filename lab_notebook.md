@@ -454,3 +454,129 @@ Next step, editable install, and then tests
 Editable install went smoothly
 
 Okay, most basic test possible. We're going to test getting the stylesheet, which is a GET event with path of `/stylesheet`
+
+## 2025-06-21
+
+Today, I want to
+
+-[X] Push code to GitHub
+-[X] Make goals checklist doc, so that I'm not stuck just scrolling to find old goals that I still want to accomplish (This is slightly different from a roadmap doc, because it's going to be on a grittier level)
+-[] Write the basic GET test
+
+Pushing to GitHub should be easy enough -- haven't played around with it in a while, but BitBucket the process was to make a new repo that was empty, then link to it as a remote from my local git, and push. That's going to be the basic process I attempt.
+
+I don't think I have an SSH key set up from this machine in my GitHub -- going to add new key. I expect there to be instructions how to do it on GitHub, but I expect it to be: generate SSH key with ssh-keygen; upload key to GitHub.
+
+No directions on GitHub -- I'm going to google for it, I could probably wing it and be right, but security is one of those places that I'd prefer to be actually correct.
+
+https://docs.github.com/en/authentication/connecting-to-github-with-ssh/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent
+
+The provided command is `ssh-keygen -t ed25519 -C "your_email@example.com"`, to generate an edDSA key. I'm not going to tag it with my email, so I'll use `ssh-keygen -t ed25519`
+
+Done, created key then copied to clipboard -- a little annoying that it's not the default method, but `xclip -sel c < {input_file}` copies a file to clipboard
+
+Now I need to tell git to use the key to push to GitHub -- I believe I can do this with the hosts file, but it's probably easier just to set some kind of global variable in git (I'm not planning to have multiple keys connected to GitHub on this computer)
+
+https://docs.github.com/en/authentication/connecting-to-github-with-ssh/testing-your-ssh-connection
+
+Hmm, am I silly? Will it just auto-try each of my keys? That... doesn't sound correct, but let me give it a try with `ssh -T git@github.com`
+
+That failed, and I think the reason is that they expected me to a) use the ssh-agent (which isn't a bad idea) and b) use id_rsa or other default name for my key (which would be automatically loaded by the ssh-agent)
+
+https://stackoverflow.com/questions/23546865/how-to-configure-command-line-git-to-use-ssh-key
+
+Ahhhh, yeah, not the hosts file, but the ssh config file
+
+Yep, editing that allows the ssh -T to work. Testing the git push now
+
+`git push -u origin master`, and then cd'ing down to the worktree `git push -u origin feature/AddPOSTRequest` worked perfectly
+
+Code is now pushed to GitHub, moving to making a goals doc -- I'm going to keep this in master with this lab notebook, these goals could span multiple branches
+
+Okay, created goals doc. Moving on to the actual meat of the matter, creating tests
+
+So what am I doing here? I'm going to create a basic test of the GET /stylesheet functionality. We're going to test running the lambda_handler function with an event that has the GET method and the /stylesheet path. Right now, this is an integration test -- once we break out the GET functionality (and likely break paths out further), we'll be able to do unit tests.
+
+In order to test this, we need to import our module with our correct environment variables set up, and we definitely need to update our code to use resource imports instead of just directly reaching out with file paths -- otherwise, we're not really testing our app, we're going to be testing how similarly we can set up our testing environment to the app's environment. Maybe we have ISLOCAL take a db location instead of just true? That way, we can remove the database from our app folder and still be able to reliably test
+
+To note, we're not going to use Claude for generating any of our test code -- Claude will not touch the test directory at all (we should add that to his CLAUDE.md as well). This is because tests encode our design specs for the product, which is our responsibility, not the AI's. This also helps prevent the AI from just rewriting failing tests to make them pass. See https://diwank.space/field-notes-from-shipping-real-code-with-claude for more details
+
+-[] Add text to CLAUDE.md telling Claude not to update any file in the tests directory
+
+We're going to
+1. [X] Update our code to use resource imports for the templates and stylesheets
+2. [X] Update ISLOCAL to take a db location (which can also be `:memory:` for easy testing)
+3. [] Set up environment variables in our test code before we import the rent_app package to use ISLOCAL
+4. [] Set up our database as a fixture
+5. [] Import the rent_app package in our test code
+6. [] Create a test function that runs lambda_handler with an event w/ method=GET and path=/stylesheet
+
+We can use Claude to do the first two, but before that I'm going to look up resource imports myself, because I believe the way I've done them in the past is now deprecated, and I want to make sure Claude won't fall into the same mistake.
+
+https://docs.python.org/3.11/library/importlib.resources.html
+https://importlib-resources.readthedocs.io/en/latest/using.html
+- importlib_resources is a backport library of functionality added in 3.7
+- Docs have more details on how and why than baseline python docs
+- Pretty simple, can just reference resources inside a package. One oddity is that this seems to be referencing resources from outside the package -- am I wrong? Is this not the way to reference resources you're importing inside the package, to ensure that they'll be correctly and consistently imported?
+- The `files` API was added in 3.9, and is the new approved way of accessing resources (re:my point before about the way I've done it previously being deprecated)
+
+So, if my understanding is correct, we'll be able to import importlib.resources, and then access the templates and stylesheet with importlib.resources.files().joinpath('templates').joinpath('stylesheet.css').read_text()
+
+Hopefully this is also what (or similar to what) jinja is doing with their template loading
+
+We've made the update for stylesheet, let's manually test raw (running in the appropriate location), and then also test importing it and running it
+
+We... didn't test run this since we made some updates to the type signature of get_db_and_s3 -- we forgot to use from `__future__ import annotations`
+
+And we need to also update our `get_rents.sql` to use importlib.resources. Let's take a look through the doc to see if there's anywhere else (besides the database connections)
+
+And I think that our directory changes caused our jinja template loader to stop working -- we just got an error complaining about not being able to find the package `app`, which, well, makes sense. Should be able to update to rent_app? Or maybe rent_app.app? I'll test both, and then start researching if it fails
+- rent_app worked!
+
+Okay, most basic test of the `/` path worked! Now let's try to run this from a shell located outside the src directory, importing the module
+
+Trying to import rent_app in the shell shows that it has nothing in it -- we need to make sure we do `from app import *` in the `__init__.py` module to have it show like we want it to
+- it's actually `from .app import *`, we need to be explicit about the relative import
+
+Testing in iPython -- Success! The `/` path is failing (appropriately) because we still haven't updated the database paths to be given by ISLOCAL, but the `/stylesheet.css` path works!
+
+We'll commit this, then ask Claude to add the ISLOCAL db path
+
+Claude prompt:
+
+Please update the ISLOCAL environment variable to be a path to a database file. Use this path instead of the hardcoded path in app.py, and update other locations in the project (such as our poe tasks) to take into account this change. Ensure 
+
+Okay wait, this is bog-standard and pretty easy -- writing it out like this it would be easier just to do it.
+
+Hmm, `poe run` is emitting a warning -- `<frozen runpy>:128: RuntimeWarning: 'rent_app.app' found in sys.modules after import of package 'rent_app', but prior to execution of 'rent_app.app'; this may result in unpredictable behaviour`
+    - Seems to be due to us using the -m switch, which is causing the package to be imported twice (imported first, and then imported again in our `__init__.py` file)
+    - Can we just... not use the -m switch? Or, if we're married to it, we could move to using a proper `__main__.py` file.
+    - Let's move off the -m switch, and instead due an explicit python command -- we may need to set up more in the future
+    - If we find ourselves doing more than just stupid simple run / testing with this, we may want to make a `__main__.py` file with a cli interface built in
+
+We're not finding the correct db -- we've probably got our path set up wrong
+    - Actually, it was just that we set up for a db that didn't exist yet -- just needed to run `ddl.sql` on it
+
+Taking a look at the results, we'll need to make sure we start interpreting None as 0 for the values of the amounts
+
+Okay, poe run is now running correctly, with a db chosen via the ISLOCAL environment variable, with no warnings
+
+We're well past the point where the name of this branch makes sense -- We should break "adding testing" out to a separate branch
+
+We'll need to do some exploratory testing to figure out how to do this with Neogit, but it should be valid.
+
+That... was a harrowing experience, and I think I'm going to wipe all of it out. It would be slick and clean to have the tests in their own branch, but I don't think it makes sense, especially when it involves a change of the directory structure. This could have been better if I had made better commits (ensured that only one thing happened in each) and if I had a tool that felt better to use for this. I think that this is where a gui git tool would really shine -- I would love to be able to use a mouse to just drag commits between different places, have it recalculate the conflicts, and then go from there. I also think that anyone directly espousing neovim or vim is ignoring the glaring issue in discoverability for commands -- there's no way for me to know what I can do next, especially in context-dependent situations. I want to be able to describe what I want, and have the editor give me a combination. LLM built into neovim?
+
+Things we learned here: git mergetool doesn't work directly on my computer, it thinks bc is available but isn't -- instead I need to use `git mergetool --tool=nvimdiff` in order to get a merge editor
+
+Choose from LOCAL (the file you're merging into, in the target branch), REMOTE (how it looks in your source branch), or BASE (the common ancestor of the two) using `:diffget {first two chars}`
+
+Go read this whenever you need to rebase again https://git-scm.com/book/en/v2/Git-Branching-Rebasing
+
+`[c` will take you to the next change in the diff
+
+Rebasing is making copies of commits replaying the effects of that commit onto the current history
+
+When you need to do this again, get a better tool (diffview.nvim looks nice?)
+
+
