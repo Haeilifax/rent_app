@@ -4,8 +4,8 @@ import json
 from os import environ
 import sqlite3
 import datetime
-from pathlib import Path
 import urllib.parse
+import importlib.resources
 
 import boto3
 from jinja2 import Environment, PackageLoader, select_autoescape
@@ -58,6 +58,7 @@ def get_db_and_s3() -> tuple[sqlite3.Connection, S3ServiceResource]:
 def lambda_handler(event, context):
     global db
     global s3_client
+    local_resources = importlib.resources.files()
     method = event["requestContext"]["http"]["method"]
     path = event["requestContext"]["http"]["path"]
 
@@ -66,7 +67,9 @@ def lambda_handler(event, context):
 
         if path == "/stylesheet.css":
             # Serve CSS file
-            css_content = Path("templates/stylesheet.css").read_text()
+            css_content = local_resources.joinpath(
+                "templates", "stylesheet.css"
+            ).read_text()
             return {
                 "statusCode": 200,
                 "headers": {"Content-Type": "text/css"},
@@ -78,11 +81,13 @@ def lambda_handler(event, context):
             month = datetime.datetime.now().isoformat()
             db, _ = get_db_and_s3()
             cur = db.cursor()
-            cur.execute(Path("get_rents.sql").read_text(), {"month": month})
+            cur.execute(
+                local_resources.joinpath("get_rents.sql").read_text(), {"month": month}
+            )
             rents = cur.fetchall()
             print([*rents])
             env = Environment(
-                loader=PackageLoader("app"), autoescape=select_autoescape()
+                loader=PackageLoader("rent_app"), autoescape=select_autoescape()
             )
             template = env.get_template("index.jinja")
             print(template.render({"rents": rents}))
@@ -124,7 +129,7 @@ def lambda_handler(event, context):
                     records_to_insert,
                 )
                 db.commit()
-                
+
                 # Upload updated database back to S3 if not local
                 if not ISLOCAL:
                     s3_client.Object(BUCKET_NAME, "database.db").upload_file(
