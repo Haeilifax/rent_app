@@ -579,4 +579,55 @@ Rebasing is making copies of commits replaying the effects of that commit onto t
 
 When you need to do this again, get a better tool (diffview.nvim looks nice?)
 
+## 2025-06-22
 
+Short session today. We're actually going to get something done.
+
+Step one, we're going to actually write the GET /stylesheets.css test
+
+Step two, I don't know if there's going to be a step two
+
+-[] Write GET /stylesheets.css test
+
+Can we set environment variables using some kind of pytest config, instead of setting them directly in the module?
+
+https://docs.pytest.org/en/stable/reference/reference.html
+https://docs.pytest.org/en/stable/how-to/monkeypatch.html
+
+Not with a pytest config, but by using a fixture with `autouse=true` we can monkeypatch the environment to have a particular value. I wonder if this is in anyway better than just having the environment variable set by default -- I guess it's possible I don't understand how pytest works, and just having the environment set in the body of the test module wouldn't do it? Or, actually, no -- it's that if you're testing with multiple test modules, you don't want to change the environment for all of them, necessarily, so having the fixture would help with that. Since we're always going to want these environment variables set, we should actually set them as part of the test task (and make sure we always run tests with the task).
+
+We're setting up a nasty footgun, having our default behavior reaching out to production S3. We should update to change that after this
+
+-[] Update to only reach out to S3 if explicitly told we're not running locally
+
+See line 39 for why we can't set the environment variables directly before the ipython in the poe dev_env task -- poe reads the environment variables as us trying to run them as commands
+
+Setting up the database -- we want to do that once, and have it revert to that state whenever we need it again. That's trickier to do with this real database -- consideration is having an in-memory database. Will multiple calls to sqlite requesting :memory: give the same database? I don't think so, I expect it to generate new ones in that case. We also don't want to spin up new databases every time and fill them with data. Can we have a file as a fixture? That pytest will store the state of and revert to it after each run?
+
+https://stackoverflow.com/questions/74921132/how-to-populate-db-from-fixture-before-test
+https://stackoverflow.com/questions/70543525/pytest-how-to-create-and-read-a-file-inside-a-test
+https://medium.com/@geoffreykoh/fun-with-fixtures-for-database-applications-8253eaf1a6d
+https://stackoverflow.com/questions/57443993/use-single-in-memory-sqlite-connection-shared-among-all-unit-test-modules
+https://stackoverflow.com/questions/1037924/populating-sqlite-in-memory-for-unit-testing
+
+I think what I'm going to go with (and this is kind of suggested by the last link) is
+1. Create the SQLite file in a temp dir (with the pytest temp dir functionality)
+2. Fill the db with data
+3. Read the file as bytes
+4. Use that output for a fixture that will write the bytes to a new temp file every time, and set ISLOCAL to that temp file's path
+
+I think that I can run it once by using pytest.fixture(scope="session"), but I'll need to dig into the docs a little further to confirm that
+
+Yeah, but lets use scope="module" instead, in case we need to use a different database elsewhere.
+
+Using temp dirs: https://docs.pytest.org/en/stable/how-to/tmp_path.html
+- Oh cool, it's just a standard fixture
+
+Using monkeypatch: https://docs.pytest.org/en/stable/how-to/monkeypatch.html
+- Oh cool, it's just another standard fixture
+
+Oh goodness, getting the real path of a Path, what are we using these days... Absolute? It looks like absolute is fine for 3.11 and after (which we are), but might still be reasonable to use resolve?
+
+Lordy, `ScopeMismatch: You tried to access the function scoped fixture tmp_path with a module scoped request object. Requesting fixture stack:`
+
+Okay, time to google what we're supposed to do to get a temp path in a module scoped fixture...
