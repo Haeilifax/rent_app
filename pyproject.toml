@@ -25,6 +25,9 @@ dependencies = [
     cwd = "./src/rent_app"
     use_exec = true
 
+[tool.poe.tasks.test]
+    shell = "ISLOCAL=':memory:' STAGE=prod pytest"
+
 [dependency-groups]
 dev = [
     "ipython>=9.2.0",
