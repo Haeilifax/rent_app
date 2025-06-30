@@ -631,3 +631,50 @@ Oh goodness, getting the real path of a Path, what are we using these days... Ab
 Lordy, `ScopeMismatch: You tried to access the function scoped fixture tmp_path with a module scoped request object. Requesting fixture stack:`
 
 Okay, time to google what we're supposed to do to get a temp path in a module scoped fixture...
+
+## 2025-06-30
+
+-[] Start interpreting None as 0 for Amounts (not today)
+-[] Set up database as a fixture
+
+https://docs.pytest.org/en/stable/how-to/tmp_path.html
+- tmp_path in module scoped fixture is done by using a temp_path factory
+- tmp_path preferred vs legacy tmpdir (Path object vs legacy object)
+
+Easy, update to use tmp_path_factory vs tmp_path
+
+Okay, updated code to use that (create a temporary path with tmp_path_factory.mktemp, then use that to connect to). Testing again shows that now we're running into an issue that the Python sqlite module only wants to run one sql statement at a time,
+
+`ERROR tests/test_get.py::test_stylesheet - sqlite3.ProgrammingError: You can only execute one statement at a time.`
+
+https://docs.python.org/3/library/sqlite3.html#sqlite3.Cursor.executescript
+- Easy, just use `executescript` instead
+
+And one more error -- one of our temp paths is a directory vs a file
+- This shows a misunderstanding of what tmp_path does on my part -- it creates a temporary directory, but I was thinking of it being a file directly (and thus being different than the temp_path_factory fixture)
+- In fact, even more so, it looks like we have to explicitly make the things we reference, which does make sense, but I wonder if it will automatically create a path if we don't manually create the folders leading down to it?
+
+Worked! I believe it worked because the tmp_path is already created when the fixture runs, so it doesn't need to be created if you don't create a subdirectory (which they did in the docs above)
+- Hmm, actually, let's test that -- sqlite3 will also create the file if it's pointed at one that doesn't exist (will it create a directory structure too? Or just the file?)
+    - We'll make a test with an assert, assert temp_path.isfile() (or whatever the correct lingo is)
+        - `temp_path.exists()` -- https://docs.python.org/3/library/pathlib.html
+    - `assert tmp_path.exists()` does not cause the test to fail, so I think we're correct
+
+Awesome, so we've got green, the test doesn't fail anymore. Doesn't necessarily mean that things are correct, but at least they're not failing, so we should be good to test the /stylsheet.css path
+
+This test is going to assert that we've got text coming back -- we're not testing on the other side of a lambda, so we're not getting the bonus HTTP headers (like filetype or etc) coming back. We also don't really want to test for the existence of anything in particular. I think we just test that the response is non-empty? Issue is, this doesn't show whether we're just hitting the default path or if we actually hit the real /stylesheet.css . 
+
+We're not going to assert anything in the test, actually -- currently, if we fall through to the default it just gives us the landing page, so asserting that it gives us any text back would always succeed. If the stylesheet starts failing to return for some reason, but the test is green, it'll be strange. We can't really fix that, but we can at least make it obvious that a green test doesn't actually mean the piece is working (... Wow, what a bad and terrible test)
+
+Okay, third time we're going back on this -- we're going to import the stylesheet resource directly from the package, and compare that to the output. That will avoid coupling us to the current stylesheet while still actually testing that we're hitting the right location. It does couple us to the directory structure of the package (which we don't like -- that shouldn't be a public guarantee), but we'll take a test unexpectedly failing when we do a big update over a test which doesn't test anything and doesn't fail if something goes wrong.
+- We will do this by using importlib.resources, with a package of rent_app, and read from there (like we did in the module itself, but using an explicit package instead of just the implicit "this package" when you don't give a package)
+
+... Wow. Okay. Chalk one up to "using LLM's is dangerous for your knowledge of your own code". We are 100% passing back an explicit body and header and status code in our return.
+
+So we need to change our assertion to be comparing our true css vs the body of the returned dictionary
+And we need to assert that the status code is 200
+And we need to assert that the content-type header is text/css
+
+We see a type error in the test, because some of the possible values of the lambda_handler dict don't align with what we're trying to do with them (ex. it sees us trying to slice the headers dict, and complains because you can't slice an int). We should update the lambda_handler function with an actual return signature (either of dict[str, Any], or making Claude write up a more complete TypedDict).
+
+And there we have it! A completed GET /stylesheet.css test!
