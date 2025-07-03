@@ -678,3 +678,160 @@ And we need to assert that the content-type header is text/css
 We see a type error in the test, because some of the possible values of the lambda_handler dict don't align with what we're trying to do with them (ex. it sees us trying to slice the headers dict, and complains because you can't slice an int). We should update the lambda_handler function with an actual return signature (either of dict[str, Any], or making Claude write up a more complete TypedDict).
 
 And there we have it! A completed GET /stylesheet.css test!
+
+## 2025-07-02
+
+Today, we're going to start pushing on POST requests. We've spent a while digging into tests, and we have a test suite, but I want to get something real done on actually pushing this app. It's also the second of the month, so if I can get the most basic functionality complete today or in the near future, it can provide value immediately.
+
+So goals for today are to manually test the POST request functionality that Claude added (we think we know an issue already, that the lease ids are going to compare wrong, number vs text, but we'll see). Once we've manually tested, we're going to try to find as many errors as possible in a timeboxed 45 minutes, then regroup.
+
+-[] Manually test POST requests
+-[] Find errors and issues, and write them here
+
+We have not pushed up Claude's code yet. There will be multiple different avenues that we need to test:
+- Does the data pushed by the POST request create the right db entry?
+- Does the db save correctly to S3 (persistence)?
+- Does the UI push the correct data?
+
+So we need to test not only locally, but also in the browser. We should set up a local lambda server (using Docker, most likely) so that we can test browser based things without having to push up
+
+We haven't pushed from the POST request worktree, so we haven't had to install all the terraform necessities. We should set up a worktree script that will 
+1. Create a new worktree
+2. Descend into that tree
+3. Create the virtual env with uv off the uv lock file
+4. Install the appropriate terraform details off the terraform lock file
+
+-[] Set up poe task for creating a new worktree
+
+This would be a good job for Claude -- we'll set it up next time we need to create a worktree
+
+We need to set up a poe task for initializing a new setup, to ease spin up time for new devs (though it's unlikely that any will sign on). It should run `terraform init` with a cwd of the terraform folder, and run `uv sync` -- this can then be used in the poe task for creating a worktree
+
+-[] Set up poe task for syncing a folder that hasn't been developed in yet
+
+uv sync needs to sync `--dev`, otherwise it won't install rent_app (required for testing) -- all the more reason for a poe task
+
+Hmm, actually, it wasn't the --dev option -- checking the uv lock file, the rent app wasn't actually installed as a dev dependency -- fixing that, we don't want to install the rent app in an actual install, only locally during development. I believe the issue with this is actually that, since it's an editable install, it's keying off the current working directory, which is the terraform folder? But this doesn't make sense, uv doesn't care about that, I'd be able to use it from any folder in the project
+
+https://docs.astral.sh/uv/concepts/projects/sync/#syncing-the-environment
+
+Hmm. It looks like uv will actually automatically install the package I'm working on if a build-system is declared. So my editable install isn't necessary -- but is this the reason I'm being uninstalled whenever I sync? Because there's no build system declared?
+
+https://github.com/astral-sh/uv/issues/9518
+
+Goddamn intentional behavior. Ooooo I'm roasty toasty. Okay, declare build system, and we'll be groovy
+
+https://docs.astral.sh/uv/concepts/projects/config/#project-packaging
+
+So we can force it to be installed as a package by adding `tool.uv.package = true` into our pyproject.toml, but that just uses the legacy build system. We'd be better off actually declaring a build tool. 
+
+https://github.com/astral-sh/uv/issues/1626
+
+```
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+```
+
+but that still uses setup tools. 
+
+https://docs.astral.sh/uv/concepts/projects/init/
+
+```
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+```
+- The build system used by the default `--package` flag for uv init
+
+This is likely our best bet, but I'd like to see options...
+
+`hatchling, uv_build, flit-core, pdm-backend, setuptools, maturin, or scikit-build-core`
+- Option list for uv init --build-backend
+
+https://github.com/astral-sh/uv/issues/13685
+https://github.com/astral-sh/uv/issues/9271
+https://github.com/astral-sh/uv/issues/12856
+https://github.com/astral-sh/uv/issues/11838
+https://packaging.python.org/en/latest/tutorials/packaging-projects/
+- Python's tutorial uses Hatchling as well
+
+https://packaging.python.org/en/latest/key_projects/#hatch
+https://packaging.python.org/en/latest/key_projects/#setuptools
+https://packaging.python.org/en/latest/key_projects/#flit
+- Flit was my first thought on build tools
+
+https://packaging.python.org/en/latest/key_projects/#pdm
+- PDM is a build-system, interesting -- thought it was more of a response to npm
+
+https://packaging.python.org/en/latest/guides/tool-recommendations/
+- Lord, unhelpful. Just presents a bunch of options. At least there's links to each of them
+
+https://flit.pypa.io/en/stable/rationale.html
+- Simple tool for packaging. Reasonable, makes me wonder though how quickly you leave the realm of simple
+
+https://github.com/pypa/hatch/tree/master/backend
+https://github.com/pypa/hatch/tree/master
+https://hatch.pypa.io/latest/why/
+- Full management tool -- we definitely don't need the full hatch, we're using uv, but hatchling would be fine
+- Really only compares against setuptools -- seems like a fine tool, but haven't seen anything that clearly makes it the one to use
+
+https://backend.pdm-project.org/
+https://github.com/pdm-project/pdm-backend
+https://github.com/pdm-project/pdm
+- No info
+
+https://pypi.org/project/poetry-core/
+
+https://old.reddit.com/r/Python/comments/fe04s2/what_do_you_recommend_for_a_build_system/
+- Too old to be useful -- 5 years
+
+https://old.reddit.com/r/Python/comments/1jv888t/are_you_using_inline_deps/
+- Opened this link because inline deps????
+
+https://peps.python.org/pep-0723/
+https://packaging.python.org/en/latest/specifications/inline-script-metadata/#inline-script-metadata
+- Ahh, lets one-file scripts have additional details. Unimportant to our purposes here, but interesting -- I think I dislike it?
+
+https://old.reddit.com/r/Python/comments/1jv888t/are_you_using_inline_deps/
+- Okay, back to this
+- Good discussion
+- I agree that this is very cool for one file scripts, but mostly on the developer side -- it just removes the need for a full file structure
+- I also agree with one of the commenters that I'm not a fan of "magic comments", with impacts on code and special formatting
+- One of the commenters was complaining that this requires two different requirements places, one for people using this new structure and one for people not -- another commenter suggested requiring just uv in the requirements.txt file, which would then allow the script to just run. Kinda hot if I wanted to use this
+
+https://medium.com/quansight/pep-517-build-system-popularity-b4daccaa47fc
+- Obv setuptools is most popular, followed by Poetry, then Hatchling, then Flit
+    - Poetry and Hatchling on the same order
+- Since Poetry and Hatch are full featured packaging tools, vs Flit being just a build tool, impressive that it's competing so highly -- I would guess everyone using Poetry or Hatch is using the respective build tool, vs Flit needing to be specfically selected
+    - Not even counting the fact that Hatchling is the tutorial choice for both PyPA and uv
+
+https://news.ycombinator.com/item?id=43095157
+- Discussion of article about uv
+- `exclude-newer` option allows giving a timestamp that all packages must be older than
+
+https://old.reddit.com/r/learnpython/comments/109lwq0/whats_a_good_backend_for_building_python_packages/
+
+Fine. Nobody on the internet actually cares about this. It's entirely commodified, or I guess most people don't need to think about it. We'll use Hatchling, because it's popular and used in tutorials (so if there's anything that people are centering around, it'll be that). I would prefer to use Flit, because it's stand-alone, but I don't trust that it'll sufficiently handle complex use cases (since extending it doesn't involve plugins, but instead creating a new build-backend). I also have a vibe about it that it'll be uncomfortably limiting, that it's primarily made for a small use case that's easy to deviate from.
+
+Going to use the snippet from the uv docs:
+
+```
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+```
+
+Okay! uv successfully installed rent-app
+
+Attempting the poe init task (which will run both uv sync and terraform init).
+
+Success
+
+Attempting poe apply (which will run the terraform apply command)
+
+Failure, goodness, because it doesn't recognize that these things already exist...
+I need to generate a terraform state file? Or commit it?
+
+https://developer.hashicorp.com/terraform/language/state
+- `terraform.tfstate` is the file name
