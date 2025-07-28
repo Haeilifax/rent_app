@@ -851,3 +851,136 @@ https://stackoverflow.com/questions/67963719/should-terraform-lock-hcl-be-includ
 - This says that the lock file should be included (no details about state file). Am I ignoring it right now?
     - I'm not, explicitly in the comment saying that Claude says to ignore it, but we want to keep dependencies pinned.
     - I think that the terraform .gitignore is really bad as of right now?
+
+## 2025-07-28
+
+Been busy elsewhere. Luckily I have this helpful little lab notebook to see what I was working on at the time. 
+
+Biggest thing that we're facing is trying to deploy our code to our test environment. We ran into issues with the worktree git setup (which I still like, and in fact like more that we've run into these issues -- it functions kind of like CI/CD in that you need to pre-emptively solve "well it works on my machine" issues). We solved the first issue, of uv not installing our package as an editable install, but we still need to solve the issue of terraform not syncing our files down properly. One issue we're going to have is that the clean way for this to happen would be the state file being added to our git repo in the master branch, but we're going to be adding it into our dev branch instead. This might cause annoyance when we go to merge our branch in, but we'll deal with it when we get there.
+
+Once we deploy our code, we still need to do the core thing we wanted to, which is testing the POST requests. We already expect there to be an issue with the lease_id being the wrong type (a string instead of an int), and thus comparing wrong in SQLite. 
+
+So, starting off, let's update the goals doc
+
+Okay, now let's determine what the correct .gitignore for terraform is
+
+https://stackoverflow.com/questions/66080465/gitignore-file-for-terraform
+- Recommends a certain set of files, not including the state file, for ignoring -- possible.
+    - Ignore variable files (valid? should this be a machine by machine thing?)
+    - Ignore override directory (valid? I guess this could be used to override specific things for your machine, but I would want to use overrides moreso for modules / reusability)
+    - Ignore environment specific file (valid, might contain secrets / be specific to the local machine)
+    - Ignore CLI config files (valid? I'm not actually sure what these do...)
+
+https://developer.hashicorp.com/terraform/cli/config/config-file
+- Yeah, this all seems like things that are machine specific
+
+https://spacelift.io/blog/terraform-gitignore
+- Hmm, they recommend ignoring state files, because they update every plan and apply... Every plan and apply? Or just ones that made changes?
+- Ignore crash logs too -- I like that
+- Ignore .pem, .pub, .key -- no, this is dumb, don't store your keys in the project, also while it would be weird to commit your .pub file, it's not a secret...
+- They say "# Exclude all .tfvars files, which are likely to contain sensitive data, such as password, private keys, and other secrets. These should not be part of version control as they are data points which are potentially sensitive and subject to change depending on the environment."
+    - Interesting -- vars file vs environment file for secrets?
+- Wait, they call out ignoring environment files earlier, and then don't put it into the final file output... is this AI slop, or just bad? Also, actually, they call out ignoring environment file, but that's actually just a .envrc file, that's not terraform specific at all (I think it's direnv?). Dumb.
+- I'm reserving judgement, but I might stop reading spacelift.io for information, they don't seem trustworthy
+
+https://spacelift.io/blog/terraform-secrets
+- "Terraform uses secrets to automate infrastructure provisioning activities similar to the ones listed above. The secrets are also stored/managed in state files referenced by Terraform for its workflow."
+    - Uhhhh wait secrets are in state files, this is something important -- is this real? We're already not sure if we trust spacelift.io...
+        - https://developer.hashicorp.com/terraform/language/state
+            - Recommend storing it in the Terraform proprietary version control...
+            - Nothing about secrets, but we can also go check it out, it's just JSON
+        - It looks like variables are stored there, so could definitely see secrets being there -- there's also an array for "sensitive_attributes", maybe there's functionality to hide certain things from the state file?
+        - https://developer.hashicorp.com/terraform/language/state/sensitive-data
+            - "Terraform state can contain sensitive data, depending on the resources in use and your definition of "sensitive." Unless your variables or resources are ephemeral, the state contains resource IDs and all resource attributes. For resources such as databases, this can contain initial passwords."
+            - Okay, it's valid that you wouldn't want resource IDs public, and resource attributes too. Initial passwords would be not great to publish. 
+            - "You can also mark your sensitive data in variables as ephemeral to prevent Terraform from writing those variables to your state and plan files."
+                - This seems like the way -- avoids most of the actual sensitive data making it into the state file
+            - In an actual company, using remote state seems the best -- avoids needing to commit the state files, keeps everyone in sync with the actual real state (not just whatever they last used locally), and makes it cleaner when releasing code publicly (because the public doesn't need to spin up like a new dev on the team, they don't need or want internal company state files)
+
+https://developer.hashicorp.com/terraform/language/ephemeral
+- Hmm. I don't think I fully understand how to use this, but I'll try once we get to the point of needing secrets
+
+https://old.reddit.com/r/devops/comments/10a7j78/terraform_how_do_you_handle_secrets/
+- I'm really coming around to "there's no way to make the state file safe", and that we need to just treat it as toxic and avoid committing it.
+- So my issue then changes -- how do you spin up a new dev on a project with existing resources? It's not commiting the state file, that's a breach waiting to happen, is there another command to make terraform generate a new state file off existing resources?
+
+https://support.hashicorp.com/hc/en-us/articles/4403065345555-Terraform-State-Restoration-Overview
+- Just how to fix a bad state file, not how to regenerate one (is the state file the only way to connect logical resources to real ones? It's very possible, if terraform doesn't apply some marker of its existence onto every resource. Honestly, that's kinda likely too)
+
+https://developer.hashicorp.com/terraform/tutorials/state/refresh
+- `-refresh-only` flag for plan and apply allows some reconciling of state
+- Doesn't mention making entire state files up from existing resources
+
+https://stackoverflow.com/questions/74205524/how-to-recover-terraform-state-file
+- Yeah, it's for Azure but I assume it's the same for AWS -- there might be ways to recover the state file, but they aren't easy or clean.
+
+Okay, so we're at
+- We need the state file to spin up new devs
+- But the state file can't be part of our git repo
+Thus:
+- We need to have an out of band process to spin up the dev
+
+This probably looks like the remote backend that Terraform talks about in their docs. Goodness, I'm starting to like this tool less.
+
+Okay, so remote backend is one option. Another option is doing stupid copy and paste (at least for me as a solo dev) -- I
+This probably looks like the remote backend that Terraform talks about in their docs. Goodness, I'm starting to like this tool less.
+
+Okay, so 
+- remote backend is one option. 
+- Another option is doing stupid copy and paste (at least for me as a solo dev)
+    - I like this less -- I'd prefer to do the right thing, and the thing that will teach me more about the tool
+- committing the state file is _not_ an option -- it's a reasonable thing right now, but it's a loaded gun pointed at our foot the moment we want to add auth and etc
+- Rolling our own remote backend (using probably S3 and a poe task that updates the state as part of our apply / plan) honestly doesn't sound the worst, but I bet that's basically what the real remote backend does, and we don't have to continue to support it after the fact
+- Do whatever the annoying and difficult process is to update state file from existing resources -- this is honestly my favorite, but I feel like this would be intended behavior if it worked in all cases.    
+    - Very "crash-first" design
+    - Would mean that the state file is just a helpful cache, but I think it's doing more than that
+
+https://medium.com/@abtreece/recovering-terraform-state-69c9966db71e
+- Talks about recovering state using the import command
+- Yeah, this is gross and disgusting -- good if I needed to import a single resource, but no more
+
+Okay, remote backend it is
+
+https://developer.hashicorp.com/terraform/language/backend
+- Backend block in the tf.main file
+- Default backend is `local` -- I guess it's all an interface, wonder how that plugin system works
+- Recommend using environment variables to specify creds
+    - Should be fine, aws cli should take care of this for us?
+- Rerun `terraform init` when updating the backend
+
+https://developer.hashicorp.com/terraform/language/backend/s3
+- Use Bucket Versioning in real-use
+    - This will use a lot more space, sooooooo I think we're going to not do that for this project
+
+https://developer.hashicorp.com/terraform/language/state/workspaces
+- Workspaces?
+- Requires using a backend that supports workspaces (like S3)
+- https://developer.hashicorp.com/terraform/cli/workspaces
+    - Select the workspace in use via the CLI -- not by directory
+    - Different state files
+
+Okay. We're going to create a bucket for this, and use the provided sample backend config. Should be easy enough, hopefully the aws cli just makes the credentialing work
+
+Put in the backend line into both the worktree and into master -- we're going to run the terraform init from master to hopefully push the state file up, and then be able to use it in the worktree
+
+Running in master success, asked us to copy up state file to backend, we said yes, created a state file in our bucket.
+
+Weird error trying to run `tf plan` in worktree -- `An argument named "triggers_replace" is not expected here.` on data.archive_file.lambda_source
+    - Why are we only seeing this error now? This shouldn't have changed since last run
+    - Or has it changed, and we've been bad about not pushing up changes after we make them?
+    - OOOOOHHHH, we did change it, actually recently -- so that it'll replace properly. Was this what we were doing right before we ran into this deploy problem?
+        - We didn't talk about it in the notebook...
+        - This looks like we pulled it from somewhere
+
+https://stackoverflow.com/questions/51138667/can-terraform-watch-a-directory-for-changes
+- This looks to be where I pulled it from
+- Not a triggers_replace, but a triggers, and on a null_resource (the old implementation of a data resource)
+- Do we need this though? This feels like an old kludge, that I would hope is improved by now
+
+https://registry.terraform.io/providers/hashicorp/archive/latest/docs/data-sources/file
+- I would expect this to just work...
+- Since I didn't write anything about this, I'm going to just remove these changes and see what happens
+
+
+Failed to find any changes... Hmm, okay, I bet that this is why I found that article
+

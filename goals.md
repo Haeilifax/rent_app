@@ -1,5 +1,12 @@
 # TODO
 
+-[] Determine the correct .gitignore ignores for terraform
+-[] Update .gitignore with only appropriate terraform ignores
+-[] Manually test POST requests
+    -[] Pay attention to innapropriate lease_id types?
+    -[] Does the data pushed by the POST request create the right db entry?
+    -[] Does the db save correctly to S3 (persistence)?
+    -[] Does the UI push the correct data?
 -[] Create initial unit test of POST request functionality with testing framework
 -[] Create unittest for GET / (should return an HTML file)
 -[] Add GNU Terry Pratchett header
