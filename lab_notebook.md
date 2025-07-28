@@ -835,3 +835,19 @@ I need to generate a terraform state file? Or commit it?
 
 https://developer.hashicorp.com/terraform/language/state
 - `terraform.tfstate` is the file name
+
+## 2025-07-03
+
+I'm going to copy the state file down? Or, actually, first I'm going to check through the terraform docs again for what they suggest committing -- we took our .gitignore from Claude, and that might be biting us in the behind, because it seems they may be useful. Perhaps there's another way, though, that a new dev would be supposed to align their tf apply with the resources that have already been created
+
+https://developer.hashicorp.com/terraform/language/files
+https://developer.hashicorp.com/terraform/language/files/dependency-lock
+https://developer.hashicorp.com/terraform/language/files/override
+https://github.com/github/gitignore/blob/main/Terraform.gitignore
+- This looks like what Claude lifted my .gitignore from -- interesting that they ignore the state files
+
+https://old.reddit.com/r/Terraform/comments/yxtq02/items_to_include_in_gitignore_when_using_a_cli/
+https://stackoverflow.com/questions/67963719/should-terraform-lock-hcl-be-included-in-the-gitignore-file
+- This says that the lock file should be included (no details about state file). Am I ignoring it right now?
+    - I'm not, explicitly in the comment saying that Claude says to ignore it, but we want to keep dependencies pinned.
+    - I think that the terraform .gitignore is really bad as of right now?
