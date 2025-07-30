@@ -1071,9 +1071,92 @@ We're definitely setting ISLOCAL -- print statements in the tests are working co
 This is real confusing -- everything in the testing script looks like we're correctly setting the environment, it's just not passing down to the app. Going to see if this is a known issue
 
 https://stackoverflow.com/questions/73569566/pytest-monkeypatch-not-overruling-environ-variable
-- Ah. Yeah, that makes sense, we're importing environ too early, before our monkeypatch can take effect, and then the environ dict doesn't get mutated by the changes
+- Ah. Yeah, that makes sense, we're importing environ too early, before our monkeypatch can take effect, ~~and then the environ dict doesn't get mutated by the changes~~ (correction 2025-07-30 -- we're storing the value in ISLOCAL, I... believe the dict would be mutated? Let me check. It doesn't! iiiiiinteresting)
 
 So, what does that leave us with? Change to importing environ inside the actual function (I don't like it, cleaner to have ti at the top); monkeypatch the constant instead of the environment (maybe, but means we're not testing the environment variable selection process); "mock environment in pytest_sessionstart" -- maybe this? I'm not sure where this is, have to do more reading; keep digging
 
 https://docs.pytest.org/en/stable/how-to/monkeypatch.html
 
+## 2025-07-30
+
+Okay, continuing to dig on monkeypatching. My expectation is that I'll need to use the sessionstart, but it's also possible that I should make my design more amenable to testing. Due to finding that the environ dict doesn't mutate, I think changing the design would be more in-depth than a single easy replacement (e.g. just referencing the environ dict directly vs defining a constant), so I'm less interested in that. I'll look deeper into the pytest_sessionstart
+
+I should also check to make sure my db is going to test correctly -- we're not reconnecting every time, and I doubt that pytest is reimporting the package fresh every time (so our connection will be reused). I need to check whether we're overwriting the original db, or if we're using a new path every time (I think it's the second), and whether we're reimporting the package fresh each test run (I doubt it).
+
+In order to check this, I'm going to take a look at the code, and then I'll put a print in the main body of the rent_app module -- if it gets reimported, it'll run twice, otherwise it'll only print once. 
+
+Pytest only shows the prints from the tests if they fail... Okay, so that's a no-go. Let's start with one crisis at a time, fix this erroring test, and then we can use the tests to test the testing harness
+
+Cleaning up the changes, then going to continue research
+
+https://stackoverflow.com/questions/16924471/difference-between-os-getenv-and-os-environ-get
+https://stackoverflow.com/questions/10952507/when-would-os-environfoo-not-match-os-getenvfoo
+https://www.florianreinhard.de/python-environment-variables/
+- Noticed that the monkeypatch docs were using os.getenv, and were doing tests in a way that looked like they were expecting to be able to see changes to environment variables between tests -- I wondered whether this meant that os.getenv gets directly from the environment variables, where os.environ is unmutated after instantiation. However, it seems this isn't the case -- os.getenv is just a wrapper around os.environ.get
+- So this is evidence for the idea that the environment is wiped clean and all imports are re-run between tests, or more likely that monkeypatch works on the Python level, rather than just at the os level. So changing my code to just check the environment when I need the db path would probably do it (the simple and easy method)
+
+https://docs.pytest.org/en/stable/reference/reference.html
+- Okay, it's a hook -- how use?
+
+https://docs.pytest.org/en/stable/how-to/writing_hook_functions.html
+https://pytest-with-eric.com/hooks/pytest-sessionstart-sessionfinish/
+- Hmm, what exactly is a pytest "Session"?
+- Recommends using a conftest.py file -- necessary? I might do it anyway, we're gonna want the db connections across any of our test files
+- https://pytest-with-eric.com/pytest-advanced/pytest-addoption/
+    - Add CLI options to pytest in the middle of a run? This could be the easy way to add -s when I want to be able to do ipdb
+
+Easy enough, it looks like -- we're going to create a conftest file with the environment and db setup, and then proceed from there
+
+Can hook implementations be fixtures? I wonder how it's done under the hood...
+
+It'd be a terrible name for the fixture -- I'm going to do a quick search, and if it's inconclusive, finish this up and do some testing once it works
+
+https://docs.pytest.org/en/stable/how-to/writing_hook_functions.html
+- Looks like conftest.py and plugins are the only places you can declare hooks -- but this doesn't say whether this includes hook implemenations as well (just new optional hooks)
+
+https://stackoverflow.com/questions/55413277/can-pytest-hooks-use-fixtures
+- I'm a little concerned that the default fixtures (monkeypatch etc) won't work in the hook, which would be tough and annoying
+
+https://pytest-with-eric.com/hooks/pytest-hooks/
+- This says you can define hook implementations outside of conftest.py
+
+Okay, I found nothing, just going to continue making things work and check if there's a better way after
+
+Testing, can't use monkeypatch normally -- let me see if there's a way to use fixtures in hooks, or if we're just going to do some raw editing (reasonable), and need to figure out our own tmp_path (harder?)
+
+https://github.com/pytest-dev/pytest/issues/5012
+- Okay, big no
+
+Okay, so monkeypatch I don't need -- I can just change the environment myself. But doing up a temporary path? That's a bit trickier, because I want to make sure it's unique, and not going to muddle between test runs. Maybe I can just call a pytest function directly to get a temp path?
+
+https://docs.pytest.org/en/stable/how-to/tmp_path.html
+https://stackoverflow.com/questions/36070031/creating-a-temporary-directory-in-pytest
+- It looks like I could do something dumb by accessing the underlying way that pytest creates temp dirs, but that seems silly, too much, and liable to break
+
+I think that I'm going to need to just make my own temporary file in the /tmp directory -- this isn't great, means that my tests aren't portable to windows (were they anyway? I don't really know how pytest works), but I can't use the pytest temp dir creation. When does the base python temp path creation do cleanup? Does it clean its own files up, or just let the os do that?
+
+https://docs.python.org/3/library/tempfile.html
+- We want to use mkstemp, and then delete in a sessionstop hook -- if we fail to delete it, we don't really care, we aren't using this for security, we're just avoiding storing unnecessary data / making sure we have a clean working environment
+
+Plan in place -- we're going to use mkstemp from the stdlib tempfile package, and add an additional hook impl that deletes the file
+
+Cool, that seems to be reasonable -- we're now getting a new error in our test! Jinja doesn't like our "." anymore it looks like?
+- Ahhh yeah last time we didn't actually make it there, so this is the first time we're testing it
+
+https://stackoverflow.com/questions/8512677/how-to-include-a-template-with-relative-path-in-jinja2
+https://pwan.org/blog/an-exploration-into-jinja2-unit-tests-wth-pytest.html
+- Hmmmm this guy seems to be mocking out a lot of jinja stuff
+
+https://stackoverflow.com/questions/75160109/python3-and-pytest-jinja2-exceptions-templatenotfound
+
+Hmm. Maybe I can load using something other than the package loader? I don't feel like I fully understand the Jinja Environment right now
+
+So, let me just lay out what I believe is happening here:
+- We're using the PackageLoader in Jinja to load our templates
+- This uses an imported pacakge (or otherwise importable target, such as the name of a python file on the PYTHONPATH) as the base to find the templates
+- Locally, we install the package and run from its name (rent_app)
+- However, on Lambda the runner is just importing from local context -- directly running the app.lambda_handler function
+
+This suggests a solution -- instead of using local context, we instead have the module in a package named "rent_app" that we then run from local context.
+
+We can achieve this by packaging our app one level higher -- instead of packaging at src/rent_app/, we package at src/, leaving us with just a top-level directory rent_app (perfect)
