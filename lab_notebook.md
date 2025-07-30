@@ -984,3 +984,96 @@ https://registry.terraform.io/providers/hashicorp/archive/latest/docs/data-sourc
 
 Failed to find any changes... Hmm, okay, I bet that this is why I found that article
 
+## 2025-07-29
+
+Checking the zip file in the build folder, however, looks like the app.py is correct -- I think it's just a matter of it created the zip file in the past and hasn't needed to update it yet. 
+
+I'm going to try to deploy and see what happens.
+
+We needed to run tf init in the worktree as well -- we are using the state file from s3 (this is a mistake... I've done updates in the worktree to the function that we'd like to retain)
+
+Running tf plan, we only see updates needed on the zip files and the lambda function, which is great -- nothing was too far off.
+
+Going to run my apply, and then be able to test!
+
+Complete! Testing now, finally
+
+Internal Server Error! Yay! Checking logs
+
+Issue is Jinja isn't finding the package. Is this due to our earlier updates, when we were making testing work? We've now progressed to "it works on my machine" yet again.
+
+I'm going to check around the Jinja code, just visually look at it
+
+Yep, error at that point. We were hoping that Jinja would be doing exactly the same thing we were doing with the importlib resources, but it seems to be slightly different (at least given the fact that we saw the error here, and not earlier when we were doing the other imports). I'm going to check the Jinja docs to see what I should be doing here (honestly, I'm a little confused at what PackageLoader is even doing -- should I be using just a `.` for a relative import instead? I'm going to check this notebook before diving into the docs, see if I can understand what I knew before).
+
+It doesn't look like I've written anything about the Jinja PackageLoader in here. I'm going to the docs
+
+Docs weren't super helpful -- PackageLoader loads the package, you pass it a package name. This package is used to find the template resources in the templates folder. `.` as the package name doesn't seem to be excluded from possibility?
+
+Using `.` as a package name seems to not 100% break things -- running `poe test` didn't fail, but I don't think we're actually going through that code block with tests right now.
+
+Let me write a quick and stupid test for the `/` path
+
+Okay, we failed, looks like the sqlite database is not set up correctly -- we're having an error that there's no table "Lease". Probably something in our fixture code?
+
+Not seeing anything obvious -- going to add some print calls into the tests, see if that throws anything up, and then see if pytest has a way for us to drop into the offending test in a shell to see what's going on (is the path wrong? Does the db not exist? Is the fixture not setting it up correctly?)
+
+prints make it look like the database exists, maybe doesn't have data? But that shouldn't matter. Going to look for a way to drop into a shell from pytest -- my expectation is that for some reason, the database doesn't have the structure we wanted to create with our ddl.
+
+https://stackoverflow.com/questions/19169402/nose-or-pytest-drop-in-to-interactive-console-when-running-tests
+- It looks like I can use `pytest.set_trace()` to drop into an interactive shell
+- Except the docs linked are old, and going to the latest is different? Also, they don't say that anyway?
+
+https://docs.pytest.org/en/6.2.x/usage.html
+- This seems to say that using pytest --trace will drop into pdb at the start of each test
+- But we don't want that, I just want to drop into pdb (really ipdb) when it fails...
+
+I'm going to try to just put a breakpoint in and see what happens -- might be an issue with poe if the test task isn't set up to run inside the same process, but we'll see
+
+Complaining -- it thinks we should be using pytest -s when trying to read from stdin while output is being captured
+
+Lets try to run the pytest command from poe with -s
+
+Hmm -- the poe test task we made is using ISLOCAL=':memory:', which is not what we want -- we're setting ISLOCAL with our monkeypatch, but that's interesting, I wonder if there's an effect
+
+Trying to run pytest is giving errors because we don't have it installed as a tool, so bash is erroring. Is poe able to run it because it's uv conscious? How does uv tool work?
+
+`uv tool run pytest -s` perhaps
+
+............ did uv uninstall our editable install again? It installed pytest (weird, why did that happen? Clearly poe is using something slightly different), but then pytest failed saying it can't import rent_app
+
+We did see that rent_app got changed in the last uv install, but I figured that wasn't an issue.
+
+I see rent_app in the site_packages folder in the venv... Why isn't pytest seeing it?
+
+I'm going to test with a uv python shell, see if I can import rent_app
+- we run a uv python shell with `uv run python`
+
+I can import it -- it's just an issue with the tool use, then?
+
+That aligns -- the tool is venv agnostic, we actually need to run the python in the venv -- we could probably do this with `uv run python -m -- pytest -s .`, but that seems... overwrought
+
+https://docs.astral.sh/uv/pip/environments/
+- Specifically pip, we don't really care about this
+
+https://github.com/astral-sh/uv/issues/11472
+https://docs.astral.sh/uv/concepts/tools/#relationship-to-uv-run
+- I think I want uv run?
+
+Going to try `$ ISLOCAL=':memory:' STAGE=prod uv run pytest -s`
+
+ayyyyy it worked!
+
+Okay! ISLOCAL did not get changed. That's weird, but at least we can work with it
+
+We're definitely setting ISLOCAL -- print statements in the tests are working correctly, showing that it's the path
+
+This is real confusing -- everything in the testing script looks like we're correctly setting the environment, it's just not passing down to the app. Going to see if this is a known issue
+
+https://stackoverflow.com/questions/73569566/pytest-monkeypatch-not-overruling-environ-variable
+- Ah. Yeah, that makes sense, we're importing environ too early, before our monkeypatch can take effect, and then the environ dict doesn't get mutated by the changes
+
+So, what does that leave us with? Change to importing environ inside the actual function (I don't like it, cleaner to have ti at the top); monkeypatch the constant instead of the environment (maybe, but means we're not testing the environment variable selection process); "mock environment in pytest_sessionstart" -- maybe this? I'm not sure where this is, have to do more reading; keep digging
+
+https://docs.pytest.org/en/stable/how-to/monkeypatch.html
+
