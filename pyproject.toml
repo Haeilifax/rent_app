@@ -28,8 +28,13 @@ dependencies = [
 [tool.poe.tasks.test]
     shell = "ISLOCAL=':memory:' STAGE=prod pytest"
 
+[tool.poe.tasks.init]
+    shell = "uv sync --dev; terraform init"
+    cwd = "./terraform/"
+
 [dependency-groups]
 dev = [
+    "ipdb>=0.13.13",
     "ipython>=9.2.0",
     "pytest>=8.4.0",
     "types-boto3[s3]>=1.38.16",
@@ -40,3 +45,7 @@ dev = [
 addopts = [
     "--import-mode=importlib",
 ]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
