@@ -26,7 +26,10 @@ dependencies = [
     use_exec = true
 
 [tool.poe.tasks.test]
-    shell = "ISLOCAL=':memory:' STAGE=prod pytest"
+    cmd = "pytest"
+
+[tool.poe.tasks.debug_test]
+    cmd = "pytest -s"
 
 [tool.poe.tasks.init]
     shell = "uv sync --dev; terraform init"

@@ -14,6 +14,7 @@ def pytest_sessionstart():
     db.executescript(Path("database/test_data.sql").read_text())
     db.commit()
     os.environ["ISLOCAL"] = str(db_path.absolute())
+    os.environ["STAGE"] = "prod"
 
 
 @pytest.fixture(scope="module")
