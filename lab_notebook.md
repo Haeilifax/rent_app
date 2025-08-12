@@ -1160,3 +1160,30 @@ So, let me just lay out what I believe is happening here:
 This suggests a solution -- instead of using local context, we instead have the module in a package named "rent_app" that we then run from local context.
 
 We can achieve this by packaging our app one level higher -- instead of packaging at src/rent_app/, we package at src/, leaving us with just a top-level directory rent_app (perfect)
+
+## 2025-08-12
+
+We'll need to also change how we call our lambda handler -- is it imported? Can we just go through layers on the package with dots? Or will we need to make a modification to the `__init__.py` file to import in the relevant function?
+
+Only one way to find out
+
+It worked! Changing the default lambda source to src instead of src/rent_app, and changing the handler function to rent_app.app.lambda_handler gave us a working home page!
+
+Now, we'll test to see if the POST request works
+
+Initially, it doesn't really look like it -- I put in $500, and it didn't change anything. But, we kinda knew this was going to happen, since the lease id is the wrong type. I'm going to pull down the db file and check it -- I expect to see a new entry pointing to lease id "1" instead of 1
+
+Annnnd actually nothing happened -- no new CollectedRent record was made. And this is why we check, instead of just going off what we expect.
+
+We're going to write a test that will run locally, and test this behavior -- hopefully it will fail correctly, and we can track down the issue
+
+We'll also want to test the get functionality further, to ensure that we're actually pulling results from the database correctly
+
+Obviously we're still doing all integration tests at this point, but we'll add unit tests once we break out the GET and POST functions (still YAGNI for right now)
+
+We have reproduced the issue we see, where we are not creating a new collectedrent record against the lease
+    - There was initially an issue where the incorrect path was passed
+
+I've updated the tests to set the stage as well as the ISLOCAL, to avoid needing to set them in the poe task -- this then allowed me to update the poe task to a cmd task (instead of shell), meaning that it runs within the same process, and pdb (or, ipdb, which is what I use) will be properly allowed to request stdin.
+
+I believe that the earlier "reproduction" was actually hitting on a different issue, the one that we expected. It seems instead that the issue is with storing the db file back to s3
