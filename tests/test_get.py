@@ -1,26 +1,16 @@
+import pytest
 import sqlite3
 from pathlib import Path
+import os
 
-import pytest
 
 import rent_app
 
 
-@pytest.fixture(scope="module")
-def base_db_bytes(tmp_path_factory):
-    db_path: Path = tmp_path_factory.mktemp("data") / "database.db"
-    db = sqlite3.connect(db_path)
-    db.executescript(Path("database/ddl.sql").read_text())
-    db.executescript(Path("database/test_data.sql").read_text())
-    db.commit()
-    return db_path.read_bytes()
-
-
 @pytest.fixture(autouse=True)
-def setup_db(base_db_bytes: bytes, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
-    db_path = tmp_path / "database.db"
+def setup_db(base_db_bytes: bytes):
+    db_path = Path(os.environ["ISLOCAL"])
     db_path.write_bytes(base_db_bytes)
-    monkeypatch.setenv("ISLOCAL", str(db_path.absolute()))
 
 
 def test_stylesheet():
@@ -40,3 +30,11 @@ def test_stylesheet():
     assert test_css == true_css
     assert status_code == 200
     assert content_type == "text/css"
+
+
+def test_homepage():
+    response = rent_app.lambda_handler(
+        {"requestContext": {"http": {"method": "GET", "path": "/"}}}, None
+    )
+    assert response["statusCode"] == 200
+    assert response["headers"]["Content-Type"] == "text/html"
