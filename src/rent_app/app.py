@@ -115,6 +115,7 @@ def lambda_handler(event, context):
             for lease_id, values in form_data.items():
                 if values and values[0]:
                     amount = float(values[0])
+                    lease_id = int(lease_id)
 
                     if amount > 0:  # Only insert records for non-zero amounts
                         records_to_insert.append(
