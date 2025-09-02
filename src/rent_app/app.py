@@ -21,6 +21,7 @@ VALID_STAGES = ["prod"]
 STAGE = environ["STAGE"]
 ISLOCAL = environ.get("ISLOCAL", "").lower()
 BUCKET_NAME = f"rentapp-{STAGE}-persistence-bucket"
+S3_DOWNLOAD_LOCATION = "/tmp/database.db"
 
 # Declare singletons -- we'll cache these here for faster warm invocations
 db = None
@@ -46,7 +47,7 @@ def get_db_and_s3() -> tuple[sqlite3.Connection, S3ServiceResource]:
             db_location = ISLOCAL
         else:
             # /tmp is a writable location on lambda (unlike /var, where our cwd is)
-            db_location = "/tmp/database.db"
+            db_location = S3_DOWNLOAD_LOCATION
             s3_client.Object(BUCKET_NAME, "database.db").download_file(db_location)
 
         db = sqlite3.connect(db_location)
@@ -134,7 +135,7 @@ def lambda_handler(event, context):
                 # Upload updated database back to S3 if not local
                 if not ISLOCAL:
                     s3_client.Object(BUCKET_NAME, "database.db").upload_file(
-                        "/tmp/database.db"
+                        S3_DOWNLOAD_LOCATION
                     )
 
             # Redirect back to GET page (PRG pattern)
