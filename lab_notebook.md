@@ -1187,3 +1187,31 @@ We have reproduced the issue we see, where we are not creating a new collectedre
 I've updated the tests to set the stage as well as the ISLOCAL, to avoid needing to set them in the poe task -- this then allowed me to update the poe task to a cmd task (instead of shell), meaning that it runs within the same process, and pdb (or, ipdb, which is what I use) will be properly allowed to request stdin.
 
 I believe that the earlier "reproduction" was actually hitting on a different issue, the one that we expected. It seems instead that the issue is with storing the db file back to s3
+
+## 2025-09-02
+
+Short one today -- going to try to figure out why the db file isn't storing back to S3.
+
+As a quick diversion, wanted to note something cool I found that I should implement here
+
+https://frankwiles.com/posts/customize-ipython-docker/
+and
+https://www.revsys.com/tidbits/devdata-improving-developer-velocity-and-experience/
+
+Basically, I should move from having my dev_env as a poe task to instead having it be a script that IPython runs on startup in this folder. Not of primary importance, but nice, because it keeps my tools from being enforced on everyone.
+
+To determine why the db isnt being stored back, I'm first going to check whether the s3 operation is being run, and whether it's throwing an error that I'm not seeing. If it's successfully storing the db file (which we can also see via looking at the changedtime in the console), it's probably an issue with not updating the db properly (which would mean that our test is not testing what we think it is -- I just ran `poe test`, and we passed all tests)
+
+I'm first going to test by not setting ISLOCAL -- long term, we still want to move to having local be the default, but it's not yet. Default will be pushing to S3.
+
+I'm going to test in the IPython shell
+
+(I also want to look into the Helix editor, as something similar to nvim but having a different and interesting set of idioms, primarily that multiple cursors are supported centrally, something I still feel the lack of) (yes, neovim has plugins that give multiple cursors, but not in the way that I want)
+
+Okay, run succeeded, file updated -- let's check that the db is properly updated. If that looks good, then it's probably that I didn't give the lambda permissions on the s3 bucket
+
+Hmm. So update time is correct, but the file doesn't actually have any changes. This is weird, because the test passes -- locally, we create a new record. It's just not saving to s3?
+
+I'm going to take a look at the code, see if I can see anything useful, and possibly do some debugging (print or visual) to see what's going on.
+
+Something seems wrong with the upload functionality -- the file is correct, it's just not getting uploaded????
