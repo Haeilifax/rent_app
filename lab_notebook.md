@@ -1215,3 +1215,7 @@ Hmm. So update time is correct, but the file doesn't actually have any changes. 
 I'm going to take a look at the code, see if I can see anything useful, and possibly do some debugging (print or visual) to see what's going on.
 
 Something seems wrong with the upload functionality -- the file is correct, it's just not getting uploaded????
+
+## 2025-09-04
+
+Not a full session, just wanted to write down a thought I had -- is the issue that we're using WAL mode, and so it's not flushing to disk every time? I bet it is, and we can play with the settings to check that. We can also check whether the file has changed (will that actually tell us something? Is the WAL mode also touching the file in some way?)
