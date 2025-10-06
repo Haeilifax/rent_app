@@ -68,6 +68,7 @@ def lambda_handler(event, context):
 
         if path == "/stylesheet.css":
             # Serve CSS file
+            print("Serving CSS file")
             css_content = local_resources.joinpath(
                 "templates", "stylesheet.css"
             ).read_text()
@@ -86,12 +87,10 @@ def lambda_handler(event, context):
                 local_resources.joinpath("get_rents.sql").read_text(), {"month": month}
             )
             rents = cur.fetchall()
-            print([*rents])
             env = Environment(
                 loader=PackageLoader("rent_app"), autoescape=select_autoescape()
             )
             template = env.get_template("index.jinja")
-            print(template.render({"rents": rents}))
             return {
                 "statusCode": 200,
                 "headers": {"Content-Type": "text/html"},
@@ -106,6 +105,7 @@ def lambda_handler(event, context):
             # Parse form data from request body
             body = event.get("body", "")
             form_data = urllib.parse.parse_qs(body)
+            print(f"{body=}")
 
             cur = db.cursor()
             month = datetime.datetime.now().isoformat()
@@ -119,12 +119,16 @@ def lambda_handler(event, context):
                     lease_id = int(lease_id)
 
                     if amount > 0:  # Only insert records for non-zero amounts
+                        print(f"Record found: {lease_id=} ; {amount=} ; {month=} ; {collected_on=}")
                         records_to_insert.append(
                             (lease_id, amount, month, collected_on)
                         )
+                    else:
+                        print("No records being inserted")
 
             # Batch insert all records
             if records_to_insert:
+                print(f"{len(records_to_insert)} records found")
                 cur.executemany(
                     """INSERT INTO CollectedRent (lease, amount, collected_for, collected_on) 
                        VALUES (?, ?, date(?, 'start of month'), ?)""",
@@ -134,6 +138,7 @@ def lambda_handler(event, context):
 
                 # Upload updated database back to S3 if not local
                 if not ISLOCAL:
+                    print("Uploading to S3")
                     s3_client.Object(BUCKET_NAME, "database.db").upload_file(
                         S3_DOWNLOAD_LOCATION
                     )
