@@ -32,3 +32,14 @@ def test_add_collected_rent():
             found_row = True
     assert found_row
     assert response["statusCode"] == 302
+
+def test_file_changed(base_db_bytes: bytes):
+    response = rent_app.lambda_handler(
+        {
+            "requestContext": {"http": {"method": "POST", "path": "/"}},
+            "body": "1=500",
+        },
+        None,
+    )
+    db_path = Path(os.environ["ISLOCAL"])
+    assert db_path.read_bytes() != base_db_bytes
