@@ -9,7 +9,6 @@ PRAGMA auto_vacuum = INCREMENTAL;
 PRAGMA temp_store = MEMORY;
 PRAGMA mmap_size = 2147483648;
 PRAGMA page_size = 8192;
-PRAGMA journal_mode = WAL;
 
 
 CREATE TABLE IF NOT EXISTS Unit (
