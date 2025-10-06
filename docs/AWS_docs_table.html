@@ -1,0 +1,415 @@
+<table id="w290aac31c75c63c25b7b7"><thead>
+            <tr>
+              <th>Parameter</th>
+              <th>Description</th>
+              <th>Example</th>
+            </tr>
+          </thead>
+            <tbody><tr>
+              <td tabindex="-1">
+                <p><code class="code">version</code></p>
+              </td>
+              <td tabindex="-1">
+                <p>The payload format version for this event. Lambda function URLs currently support <a href="https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-develop-integrations-lambda.html#http-api-develop-integrations-lambda.proxy-format">payload format version 2.0</a>.</p>
+              </td>
+              <td tabindex="-1">
+                <p><code class="code">2.0</code></p>
+              </td>
+            </tr>
+            <tr>
+              <td tabindex="-1">
+                <p><code class="code">routeKey</code></p>
+              </td>
+              <td tabindex="-1">
+                <p>Function URLs don't use this parameter. Lambda sets this to <code class="code">$default</code> as a placeholder.</p>
+              </td>
+              <td tabindex="-1">
+                <p><code class="code">$default</code></p>
+              </td>
+            </tr>
+            <tr>
+              <td tabindex="-1">
+                <p><code class="code">rawPath</code></p>
+              </td>
+              <td tabindex="-1">
+                <p>The request path. For example, if the request URL is
+                    <code class="code">https://<span>{</span>url-id}.lambda-url.<span>{</span>region}.on.aws/example/test/demo</code>, then the raw path
+                  value is <code class="code">/example/test/demo</code>.</p>
+              </td>
+              <td tabindex="-1">
+                <p><code class="code">/example/test/demo</code></p>
+              </td>
+            </tr>
+            <tr>
+              <td tabindex="-1">
+                <p><code class="code">rawQueryString</code></p>
+              </td>
+              <td tabindex="-1">
+                <p>The raw string containing the request's query string parameters. Supported characters include <code class="code">a-z</code>,
+                  <code class="code">A-Z</code>, <code class="code">0-9</code>, <code class="code">.</code>, <code class="code">_</code>, <code class="code">-</code>, <code class="code">%</code>, <code class="code">&amp;</code>,
+                  <code class="code">=</code>, and <code class="code">+</code>.</p>
+              </td>
+              <td tabindex="-1">
+                <p><code class="code">"?parameter1=value1&amp;parameter2=value2"</code></p>
+              </td>
+            </tr>
+            <tr>
+              <td tabindex="-1">
+                <p><code class="code">cookies</code></p>
+              </td>
+              <td tabindex="-1">
+                <p>An array containing all cookies sent as part of the request.</p>
+              </td>
+              <td tabindex="-1">
+                <p><code class="code">["Cookie_1=Value_1", "Cookie_2=Value_2"]</code></p>
+              </td>
+            </tr>
+            <tr>
+              <td tabindex="-1">
+                <p><code class="code">headers</code></p>
+              </td>
+              <td tabindex="-1">
+                <p>The list of request headers, presented as key-value pairs.</p>
+              </td>
+              <td tabindex="-1">
+                <p><code class="code"><span>{</span>"header1": "value1", "header2": "value2"}</code></p>
+              </td>
+            </tr>
+            <tr>
+              <td tabindex="-1">
+                <p><code class="code">queryStringParameters</code></p>
+              </td>
+              <td tabindex="-1">
+                <p>The query parameters for the request. For example, if the request URL is
+                    <code class="code">https://<span>{</span>url-id}.lambda-url.<span>{</span>region}.on.aws/example?name=Jane</code>, then the
+                    <code class="code">queryStringParameters</code> value is a JSON object with a key of <code class="code">name</code> and a
+                  value of <code class="code">Jane</code>.</p>
+              </td>
+              <td tabindex="-1">
+                <p><code class="code"><span>{</span>"name": "Jane"}</code></p>
+              </td>
+            </tr>
+            <tr>
+              <td tabindex="-1">
+                <p><code class="code">requestContext</code></p>
+              </td>
+              <td tabindex="-1">
+                <p>An object that contains additional information about the request, such as the
+                    <code class="code">requestId</code>, the time of the request, and the identity of the caller if authorized via
+                  AWS Identity and Access Management (IAM).</p>
+              </td>
+              <td tabindex="-1"> </td>
+            </tr>
+            <tr>
+              <td tabindex="-1">
+                <p><code class="code">requestContext.accountId</code></p>
+              </td>
+              <td tabindex="-1">
+                <p>The AWS account ID of the function owner.</p>
+              </td>
+              <td tabindex="-1">
+                <p><code class="code">"123456789012"</code></p>
+              </td>
+            </tr>
+            <tr>
+              <td tabindex="-1">
+                <p><code class="code">requestContext.apiId</code></p>
+              </td>
+              <td tabindex="-1">
+                <p>The ID of the function URL.</p>
+              </td>
+              <td tabindex="-1">
+                <p><code class="code">"33anwqw8fj"</code></p>
+              </td>
+            </tr>
+            <tr>
+              <td tabindex="-1">
+                <p><code class="code">requestContext.authentication</code></p>
+              </td>
+              <td tabindex="-1">
+                <p>Function URLs don't use this parameter. Lambda sets this to <code class="code">null</code>.</p>
+              </td>
+              <td tabindex="-1">
+                <p><code class="code">null</code></p>
+              </td>
+            </tr>
+            <tr>
+              <td tabindex="-1">
+                <p><code class="code">requestContext.authorizer</code></p>
+              </td>
+              <td tabindex="-1">
+                <p>An object that contains information about the caller identity, if the function URL uses the
+                    <code class="code">AWS_IAM</code> auth type. Otherwise, Lambda sets this to <code class="code">null</code>.</p>
+              </td>
+              <td tabindex="-1"> </td>
+            </tr>
+            <tr>
+              <td tabindex="-1">
+                <p><code class="code">requestContext.authorizer.iam.accessKey</code></p>
+              </td>
+              <td tabindex="-1">
+                <p>The access key of the caller identity.</p>
+              </td>
+              <td tabindex="-1">
+                <p><code class="code">"AKIAIOSFODNN7EXAMPLE"</code></p>
+              </td>
+            </tr>
+            <tr>
+              <td tabindex="-1">
+                <p><code class="code">requestContext.authorizer.iam.accountId</code></p>
+              </td>
+              <td tabindex="-1">
+                <p>The AWS account ID of the caller identity.</p>
+              </td>
+              <td tabindex="-1">
+                <p><code class="code">"111122223333"</code></p>
+              </td>
+            </tr>
+            <tr>
+              <td tabindex="-1">
+                <p><code class="code">requestContext.authorizer.iam.callerId</code></p>
+              </td>
+              <td tabindex="-1">
+                <p>The ID (user ID) of the caller.</p>
+              </td>
+              <td tabindex="-1">
+                <p><code class="code">"AIDACKCEVSQ6C2EXAMPLE"</code></p>
+              </td>
+            </tr>
+            <tr>
+              <td tabindex="-1">
+                <p><code class="code">requestContext.authorizer.iam.cognitoIdentity</code></p>
+              </td>
+              <td tabindex="-1">
+                <p>Function URLs don't use this parameter. Lambda sets this to <code class="code">null</code> or excludes this from the JSON.</p>
+              </td>
+              <td tabindex="-1">
+                <p><code class="code">null</code></p>
+              </td>
+            </tr>
+            <tr>
+              <td tabindex="-1">
+                <p><code class="code">requestContext.authorizer.iam.principalOrgId</code></p>
+              </td>
+              <td tabindex="-1">
+                <p>The principal org ID associated with the caller identity.</p>
+              </td>
+              <td tabindex="-1">
+                <p><code class="code">"AIDACKCEVSQORGEXAMPLE"</code></p>
+              </td>
+            </tr>
+            <tr>
+              <td tabindex="-1">
+                <p><code class="code">requestContext.authorizer.iam.userArn</code></p>
+              </td>
+              <td tabindex="-1">
+                <p>The user Amazon Resource Name (ARN) of the caller identity.</p>
+              </td>
+              <td tabindex="-1">
+                <p><code class="code">"arn:aws:iam::111122223333:user/example-user"</code></p>
+              </td>
+            </tr>
+            <tr>
+              <td tabindex="-1">
+                <p><code class="code">requestContext.authorizer.iam.userId</code></p>
+              </td>
+              <td tabindex="-1">
+                <p>The user ID of the caller identity.</p>
+              </td>
+              <td tabindex="-1">
+                <p><code class="code">"AIDACOSFODNN7EXAMPLE2"</code></p>
+              </td>
+            </tr>
+            <tr>
+              <td tabindex="-1">
+                <p><code class="code">requestContext.domainName</code></p>
+              </td>
+              <td tabindex="-1">
+                <p>The domain name of the function URL.</p>
+              </td>
+              <td tabindex="-1">
+                <p><code class="code">"&lt;url-id&gt;.lambda-url.us-west-2.on.aws"</code></p>
+              </td>
+            </tr>
+            <tr>
+              <td tabindex="-1">
+                <p><code class="code">requestContext.domainPrefix</code></p>
+              </td>
+              <td tabindex="-1">
+                <p>The domain prefix of the function URL.</p>
+              </td>
+              <td tabindex="-1">
+                <p><code class="code">"&lt;url-id&gt;"</code></p>
+              </td>
+            </tr>
+            <tr>
+              <td tabindex="-1">
+                <p><code class="code">requestContext.http</code></p>
+              </td>
+              <td tabindex="-1">
+                <p>An object that contains details about the HTTP request.</p>
+              </td>
+              <td tabindex="-1"> </td>
+            </tr>
+            <tr>
+              <td tabindex="-1">
+                <p><code class="code">requestContext.http.method</code></p>
+              </td>
+              <td tabindex="-1">
+                <p>The HTTP method used in this request. Valid values include <code class="code">GET</code>, <code class="code">POST</code>,
+                    <code class="code">PUT</code>, <code class="code">HEAD</code>, <code class="code">OPTIONS</code>, <code class="code">PATCH</code>, and
+                    <code class="code">DELETE</code>.</p>
+              </td>
+              <td tabindex="-1">
+                <p><code class="code">GET</code></p>
+              </td>
+            </tr>
+            <tr>
+              <td tabindex="-1">
+                <p><code class="code">requestContext.http.path</code></p>
+              </td>
+              <td tabindex="-1">
+                <p>The request path. For example, if the request URL is
+                    <code class="code">https://<span>{</span>url-id}.lambda-url.<span>{</span>region}.on.aws/example/test/demo</code>, then the path
+                  value is <code class="code">/example/test/demo</code>.</p>
+              </td>
+              <td tabindex="-1">
+                <p><code class="code">/example/test/demo</code></p>
+              </td>
+            </tr>
+            <tr>
+              <td tabindex="-1">
+                <p><code class="code">requestContext.http.protocol</code></p>
+              </td>
+              <td tabindex="-1">
+                <p>The protocol of the request.</p>
+              </td>
+              <td tabindex="-1">
+                <p><code class="code">HTTP/1.1</code></p>
+              </td>
+            </tr>
+            <tr>
+              <td tabindex="-1">
+                <p><code class="code">requestContext.http.sourceIp</code></p>
+              </td>
+              <td tabindex="-1">
+                <p>The source IP address of the immediate TCP connection making the request.</p>
+              </td>
+              <td tabindex="-1">
+                <p><code class="code">123.123.123.123</code></p>
+              </td>
+            </tr>
+            <tr>
+              <td tabindex="-1">
+                <p><code class="code">requestContext.http.userAgent</code></p>
+              </td>
+              <td tabindex="-1">
+                <p>The User-Agent request header value.</p>
+              </td>
+              <td tabindex="-1">
+                <p><code class="code">Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Gecko/20100101 Firefox/42.0</code></p>
+              </td>
+            </tr>
+            <tr>
+              <td tabindex="-1">
+                <p><code class="code">requestContext.requestId</code></p>
+              </td>
+              <td tabindex="-1">
+                <p>The ID of the invocation request. You can use this ID to trace invocation logs related to your
+                  function.</p>
+              </td>
+              <td tabindex="-1">
+                <p><code class="code">e1506fd5-9e7b-434f-bd42-4f8fa224b599</code></p>
+              </td>
+            </tr>
+            <tr>
+              <td tabindex="-1">
+                <p><code class="code">requestContext.routeKey</code></p>
+              </td>
+              <td tabindex="-1">
+                <p>Function URLs don't use this parameter. Lambda sets this to <code class="code">$default</code> as a placeholder.</p>
+              </td>
+              <td tabindex="-1">
+                <p><code class="code">$default</code></p>
+              </td>
+            </tr>
+            <tr>
+              <td tabindex="-1">
+                <p><code class="code">requestContext.stage</code></p>
+              </td>
+              <td tabindex="-1">
+                <p>Function URLs don't use this parameter. Lambda sets this to <code class="code">$default</code> as a placeholder.</p>
+              </td>
+              <td tabindex="-1">
+                <p><code class="code">$default</code></p>
+              </td>
+            </tr>
+            <tr>
+              <td tabindex="-1">
+                <p><code class="code">requestContext.time</code></p>
+              </td>
+              <td tabindex="-1">
+                <p>The timestamp of the request.</p>
+              </td>
+              <td tabindex="-1">
+                <p><code class="code">"07/Sep/2021:22:50:22 +0000"</code></p>
+              </td>
+            </tr>
+            <tr>
+              <td tabindex="-1">
+                <p><code class="code">requestContext.timeEpoch</code></p>
+              </td>
+              <td tabindex="-1">
+                <p>The timestamp of the request, in Unix epoch time.</p>
+              </td>
+              <td tabindex="-1">
+                <p><code class="code">"1631055022677"</code></p>
+              </td>
+            </tr>
+            <tr>
+              <td tabindex="-1">
+                <p><code class="code">body</code></p>
+              </td>
+              <td tabindex="-1">
+                <p>The body of the request. If the content type of the request is binary, the body is
+                  base64-encoded.</p>
+              </td>
+              <td tabindex="-1">
+                <p><code class="code"><span>{</span>"key1": "value1", "key2": "value2"}</code></p>
+              </td>
+            </tr>
+            <tr>
+              <td tabindex="-1">
+                <p><code class="code">pathParameters</code></p>
+              </td>
+              <td tabindex="-1">
+                <p>Function URLs don't use this parameter. Lambda sets this to <code class="code">null</code> or excludes this from the JSON.</p>
+              </td>
+              <td tabindex="-1">
+                <p><code class="code">null</code></p>
+              </td>
+            </tr>
+            <tr>
+              <td tabindex="-1">
+                <p><code class="code">isBase64Encoded</code></p>
+              </td>
+              <td tabindex="-1">
+                <p><code class="code">TRUE</code> if the body is a binary payload and base64-encoded. <code class="code">FALSE</code>
+                  otherwise.</p>
+              </td>
+              <td tabindex="-1">
+                <p><code class="code">FALSE</code></p>
+              </td>
+            </tr>
+            <tr>
+              <td tabindex="-1">
+                <p><code class="code">stageVariables</code></p>
+              </td>
+              <td tabindex="-1">
+                <p>Function URLs don't use this parameter. Lambda sets this to <code class="code">null</code> or excludes this from the JSON.</p>
+              </td>
+              <td tabindex="-1">
+                <p><code class="code">null</code></p>
+              </td>
+            </tr>
+          </tbody></table>

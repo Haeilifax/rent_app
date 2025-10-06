@@ -5,6 +5,13 @@ locals {
 
 terraform {
 
+  backend "s3" {
+    bucket = "terraform-backend-rentapp"
+    key    = "state"
+    region = "us-east-1"
+  }
+
+
   required_providers {
     aws = {
       source  = "hashicorp/aws"
@@ -37,7 +44,7 @@ variable "stage" {
 variable "lambda_root" {
   type        = string
   description = "The relative path to the source of the lambda"
-  default     = "../lambda"
+  default     = "../src"
 }
 
 # Pull down the appropriate dependencies for our project
@@ -159,7 +166,7 @@ resource "aws_lambda_function" "lambda" {
   filename = data.archive_file.lambda_source.output_path
   layers   = [aws_lambda_layer_version.dependencies.arn]
 
-  handler       = "app.lambda_handler"
+  handler       = "rent_app.app.lambda_handler"
   runtime       = "python3.12"
   architectures = ["arm64"]
   environment {

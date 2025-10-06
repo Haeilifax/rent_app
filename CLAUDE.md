@@ -6,8 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This project uses `uv` as the package manager and `poe` (poethepoet) as the task runner.
 
-- `uv run poe run` - Run the app locally (STAGE=prod ISLOCAL=true)
-- `uv run poe real_run` - Run the app simulating production (STAGE=prod ISLOCAL=false)
+- `uv run poe run` - Run the app locally (STAGE=prod ISLOCAL=database/database.db)
+- `uv run poe real_run` - Run the app simulating production (STAGE=prod)
 - `uv run poe dev_env` - Start interactive Python shell with database connection
 - `uv run poe apply` - Deploy infrastructure changes via Terraform
 
@@ -22,7 +22,7 @@ This is a serverless rent collection application with the following key componen
 - Uses WAL mode and optimized pragmas for performance
 - Schema defined in `database/ddl.sql`
 
-### Lambda Function (`lambda/app.py`)
+### Lambda Function (`src/rent_app/app.py`)
 - Single Lambda function handling GET/POST requests
 - GET requests render an HTML form showing rent collection status
 - Uses Jinja2 templates for HTML rendering
@@ -49,10 +49,13 @@ This is a serverless rent collection application with the following key componen
 
 ### Data Flow for POST Requests
 1. Lambda cold start downloads database.db from S3
-2. Parse body of `event` as JSON
+2. Parse body of `event` as www-form-urlencoded name=value pairs
 3. Update CollectedRent table with new record of the rent(s) collected.
 4. Store the updated SQLite db to S3
 5. Redirect the requester to GET the page again (PRG flow)
 
 ## Type Checking
 Pyright is configured with relaxed type checking settings in `pyrightconfig.json`. Functions should be annotated with simple type hints, to show the general signature and catch high level typing errors. Any type should only be used when the type would be too complicated to show without using Protocols or other typing structures.
+
+## Notes
+- Do not review the lab_notebook.md file unless otherwise directed, as these notes are merely documenting the process and should not be necessary for your purposes

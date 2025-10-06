@@ -2,7 +2,8 @@ SELECT
     u.address as address,
     t.name as name,
     l.rent as due,
-    l.rent - sum(cr.amount) as remaining
+    l.rent - sum(cr.amount) as remaining,
+    l.id as lease_id
 FROM Lease AS l
 JOIN 
     Tenant AS t ON l.tenant = t.id

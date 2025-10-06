@@ -9,7 +9,6 @@ PRAGMA auto_vacuum = INCREMENTAL;
 PRAGMA temp_store = MEMORY;
 PRAGMA mmap_size = 2147483648;
 PRAGMA page_size = 8192;
-PRAGMA journal_mode = WAL;
 
 
 CREATE TABLE IF NOT EXISTS Unit (
@@ -29,7 +28,7 @@ CREATE TABLE IF NOT EXISTS Tenant (
 
 CREATE TABLE IF NOT EXISTS Lease (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    tenant NOT NULL REFERENCES Tenant (id) ON DELETE RESTRICT, 
+    tenant NOT NULL REFERENCES Tenant (id) ON DELETE RESTRICT,
     rent REAL NOT NULL,
     start_date DATE NOT NULL,
     end_date DATE,
