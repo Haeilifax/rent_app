@@ -544,7 +544,7 @@ We'll commit this, then ask Claude to add the ISLOCAL db path
 
 Claude prompt:
 
-Please update the ISLOCAL environment variable to be a path to a database file. Use this path instead of the hardcoded path in app.py, and update other locations in the project (such as our poe tasks) to take into account this change. Ensure 
+Please update the ISLOCAL environment variable to be a path to a database file. Use this path instead of the hardcoded path in app.py, and update other locations in the project (such as our poe tasks) to take into account this change. Ensure
 
 Okay wait, this is bog-standard and pretty easy -- writing it out like this it would be easier just to do it.
 
@@ -662,7 +662,7 @@ Worked! I believe it worked because the tmp_path is already created when the fix
 
 Awesome, so we've got green, the test doesn't fail anymore. Doesn't necessarily mean that things are correct, but at least they're not failing, so we should be good to test the /stylsheet.css path
 
-This test is going to assert that we've got text coming back -- we're not testing on the other side of a lambda, so we're not getting the bonus HTTP headers (like filetype or etc) coming back. We also don't really want to test for the existence of anything in particular. I think we just test that the response is non-empty? Issue is, this doesn't show whether we're just hitting the default path or if we actually hit the real /stylesheet.css . 
+This test is going to assert that we've got text coming back -- we're not testing on the other side of a lambda, so we're not getting the bonus HTTP headers (like filetype or etc) coming back. We also don't really want to test for the existence of anything in particular. I think we just test that the response is non-empty? Issue is, this doesn't show whether we're just hitting the default path or if we actually hit the real /stylesheet.css .
 
 We're not going to assert anything in the test, actually -- currently, if we fall through to the default it just gives us the landing page, so asserting that it gives us any text back would always succeed. If the stylesheet starts failing to return for some reason, but the test is green, it'll be strange. We can't really fix that, but we can at least make it obvious that a green test doesn't actually mean the piece is working (... Wow, what a bad and terrible test)
 
@@ -695,7 +695,7 @@ We have not pushed up Claude's code yet. There will be multiple different avenue
 
 So we need to test not only locally, but also in the browser. We should set up a local lambda server (using Docker, most likely) so that we can test browser based things without having to push up
 
-We haven't pushed from the POST request worktree, so we haven't had to install all the terraform necessities. We should set up a worktree script that will 
+We haven't pushed from the POST request worktree, so we haven't had to install all the terraform necessities. We should set up a worktree script that will
 1. Create a new worktree
 2. Descend into that tree
 3. Create the virtual env with uv off the uv lock file
@@ -723,7 +723,7 @@ Goddamn intentional behavior. Ooooo I'm roasty toasty. Okay, declare build syste
 
 https://docs.astral.sh/uv/concepts/projects/config/#project-packaging
 
-So we can force it to be installed as a package by adding `tool.uv.package = true` into our pyproject.toml, but that just uses the legacy build system. We'd be better off actually declaring a build tool. 
+So we can force it to be installed as a package by adding `tool.uv.package = true` into our pyproject.toml, but that just uses the legacy build system. We'd be better off actually declaring a build tool.
 
 https://github.com/astral-sh/uv/issues/1626
 
@@ -733,7 +733,7 @@ requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 ```
 
-but that still uses setup tools. 
+but that still uses setup tools.
 
 https://docs.astral.sh/uv/concepts/projects/init/
 
@@ -854,11 +854,11 @@ https://stackoverflow.com/questions/67963719/should-terraform-lock-hcl-be-includ
 
 ## 2025-07-28
 
-Been busy elsewhere. Luckily I have this helpful little lab notebook to see what I was working on at the time. 
+Been busy elsewhere. Luckily I have this helpful little lab notebook to see what I was working on at the time.
 
 Biggest thing that we're facing is trying to deploy our code to our test environment. We ran into issues with the worktree git setup (which I still like, and in fact like more that we've run into these issues -- it functions kind of like CI/CD in that you need to pre-emptively solve "well it works on my machine" issues). We solved the first issue, of uv not installing our package as an editable install, but we still need to solve the issue of terraform not syncing our files down properly. One issue we're going to have is that the clean way for this to happen would be the state file being added to our git repo in the master branch, but we're going to be adding it into our dev branch instead. This might cause annoyance when we go to merge our branch in, but we'll deal with it when we get there.
 
-Once we deploy our code, we still need to do the core thing we wanted to, which is testing the POST requests. We already expect there to be an issue with the lease_id being the wrong type (a string instead of an int), and thus comparing wrong in SQLite. 
+Once we deploy our code, we still need to do the core thing we wanted to, which is testing the POST requests. We already expect there to be an issue with the lease_id being the wrong type (a string instead of an int), and thus comparing wrong in SQLite.
 
 So, starting off, let's update the goals doc
 
@@ -892,7 +892,7 @@ https://spacelift.io/blog/terraform-secrets
         - It looks like variables are stored there, so could definitely see secrets being there -- there's also an array for "sensitive_attributes", maybe there's functionality to hide certain things from the state file?
         - https://developer.hashicorp.com/terraform/language/state/sensitive-data
             - "Terraform state can contain sensitive data, depending on the resources in use and your definition of "sensitive." Unless your variables or resources are ephemeral, the state contains resource IDs and all resource attributes. For resources such as databases, this can contain initial passwords."
-            - Okay, it's valid that you wouldn't want resource IDs public, and resource attributes too. Initial passwords would be not great to publish. 
+            - Okay, it's valid that you wouldn't want resource IDs public, and resource attributes too. Initial passwords would be not great to publish.
             - "You can also mark your sensitive data in variables as ephemeral to prevent Terraform from writing those variables to your state and plan files."
                 - This seems like the way -- avoids most of the actual sensitive data making it into the state file
             - In an actual company, using remote state seems the best -- avoids needing to commit the state files, keeps everyone in sync with the actual real state (not just whatever they last used locally), and makes it cleaner when releasing code publicly (because the public doesn't need to spin up like a new dev on the team, they don't need or want internal company state files)
@@ -925,13 +925,13 @@ This probably looks like the remote backend that Terraform talks about in their 
 Okay, so remote backend is one option. Another option is doing stupid copy and paste (at least for me as a solo dev) -- I
 This probably looks like the remote backend that Terraform talks about in their docs. Goodness, I'm starting to like this tool less.
 
-Okay, so 
-- remote backend is one option. 
+Okay, so
+- remote backend is one option.
 - Another option is doing stupid copy and paste (at least for me as a solo dev)
     - I like this less -- I'd prefer to do the right thing, and the thing that will teach me more about the tool
 - committing the state file is _not_ an option -- it's a reasonable thing right now, but it's a loaded gun pointed at our foot the moment we want to add auth and etc
 - Rolling our own remote backend (using probably S3 and a poe task that updates the state as part of our apply / plan) honestly doesn't sound the worst, but I bet that's basically what the real remote backend does, and we don't have to continue to support it after the fact
-- Do whatever the annoying and difficult process is to update state file from existing resources -- this is honestly my favorite, but I feel like this would be intended behavior if it worked in all cases.    
+- Do whatever the annoying and difficult process is to update state file from existing resources -- this is honestly my favorite, but I feel like this would be intended behavior if it worked in all cases.
     - Very "crash-first" design
     - Would mean that the state file is just a helpful cache, but I think it's doing more than that
 
@@ -986,7 +986,7 @@ Failed to find any changes... Hmm, okay, I bet that this is why I found that art
 
 ## 2025-07-29
 
-Checking the zip file in the build folder, however, looks like the app.py is correct -- I think it's just a matter of it created the zip file in the past and hasn't needed to update it yet. 
+Checking the zip file in the build folder, however, looks like the app.py is correct -- I think it's just a matter of it created the zip file in the past and hasn't needed to update it yet.
 
 I'm going to try to deploy and see what happens.
 
@@ -1083,7 +1083,7 @@ Okay, continuing to dig on monkeypatching. My expectation is that I'll need to u
 
 I should also check to make sure my db is going to test correctly -- we're not reconnecting every time, and I doubt that pytest is reimporting the package fresh every time (so our connection will be reused). I need to check whether we're overwriting the original db, or if we're using a new path every time (I think it's the second), and whether we're reimporting the package fresh each test run (I doubt it).
 
-In order to check this, I'm going to take a look at the code, and then I'll put a print in the main body of the rent_app module -- if it gets reimported, it'll run twice, otherwise it'll only print once. 
+In order to check this, I'm going to take a look at the code, and then I'll put a print in the main body of the rent_app module -- if it gets reimported, it'll run twice, otherwise it'll only print once.
 
 Pytest only shows the prints from the tests if they fail... Okay, so that's a no-go. Let's start with one crisis at a time, fix this erroring test, and then we can use the tests to test the testing harness
 
@@ -1219,3 +1219,33 @@ Something seems wrong with the upload functionality -- the file is correct, it's
 ## 2025-09-04
 
 Not a full session, just wanted to write down a thought I had -- is the issue that we're using WAL mode, and so it's not flushing to disk every time? I bet it is, and we can play with the settings to check that. We can also check whether the file has changed (will that actually tell us something? Is the WAL mode also touching the file in some way?)
+
+## 2025-10-06
+
+It's been a hot minute of applying to jobs and personal life getting in the way. Getting back to this, looks like we left off at the db being uploaded from the lambda to s3, but the changes aren't sticking. The current guess (which would make sense) is that we're using WAL mode, so the updates aren't actually being flushed from the write-ahead log to the db file before we're trying to upload. I think I've got some notes surrounding this in the ddl.sql file
+
+The link in the ddl file doesn't have anything in particular about it, so I'm going to dig back through these notes to see if I wrote anything about it
+
+And nothing again, looks like we started these notes too late to capture that.
+
+Checking the internet
+
+https://sqlite.org/wal.html
+- Looks like the additional files we need to care about are any -wal and -shm files associated with the db
+- And yeah, we aren't going to push anything to the db file until the WAL hits 1000 pages
+- Due to "All processes using a database must be on the same host computer; WAL does not work over a network filesystem. This is because WAL requires all processes to share a small amount of memory and processes on separate host machines obviously cannot share memory with each other. ", we already can't use WAL in the case that we'd want to do multiple calls against the same db from different processes (in a multi-user system) -- this means any benefits are basically nil for us
+
+Okay, so if we remove the journal_mode=WAL pragma and recreate the db in S3, we should be good to go?
+- That seems to be what https://sqlite.org/appfileformat.html suggests
+
+Well, that's odd -- we changed the journal mode, and pushed the new db (with the new journal mode) to S3, as well as pushing our code (which shouldn't have meaningfully changed, but this confirms that we have the tested good code up there), and it's still not working. Worse, it looks like it's not even touching the db, because we don't have any changes to it? We need to start recording more about our tests.
+
+Made some changes, added some print debugging -- we're getting base64 bodies, and not appropriately parsing them.
+
+Okay! and with the base64 change, we now see the posted records being saved and appropriately calculating the changes
+
+We also see that the 'value = "None"' issue is due to when there's not a record, SQL is spitting out that None.
+
+This... finally marks the end of the AddPOSTRequests branch. It's been a long one
+
+Looking at the pull request, this one definitely got away from me. I'm too used to working in a big central branch, and need to start being more conscientious about spinning up new branches when I need to add a new feature.
