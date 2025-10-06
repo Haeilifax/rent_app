@@ -6,6 +6,7 @@ import sqlite3
 import datetime
 import urllib.parse
 import importlib.resources
+import base64
 
 import boto3
 from jinja2 import Environment, PackageLoader, select_autoescape
@@ -104,6 +105,8 @@ def lambda_handler(event, context):
 
             # Parse form data from request body
             body = event.get("body", "")
+            if event.get("isBase64Encoded"):
+                body = base64.b64decode(body).decode("utf-8")
             form_data = urllib.parse.parse_qs(body)
             print(f"{body=}")
 
@@ -130,7 +133,7 @@ def lambda_handler(event, context):
             if records_to_insert:
                 print(f"{len(records_to_insert)} records found")
                 cur.executemany(
-                    """INSERT INTO CollectedRent (lease, amount, collected_for, collected_on) 
+                    """INSERT INTO CollectedRent (lease, amount, collected_for, collected_on)
                        VALUES (?, ?, date(?, 'start of month'), ?)""",
                     records_to_insert,
                 )
