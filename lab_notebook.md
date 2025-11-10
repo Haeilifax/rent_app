@@ -1268,3 +1268,13 @@ Needed additional updates -- need to also run terraform init inside the newly cr
 Tried to add a sequence task wrapping it -- first run the git worktree, then cd in (will this even work?) and then do the poe terraform init task. However, we can't use args (which we're using for the feature_name) inside sequence tasks.
 
 I want a better task runner than poe -- or maybe I need to just start using it stupider, and forcing all of the shell commands into a single line
+
+Dummy stuffing all the commands into a single line (with && to make them fail together) works, but very much feels worse than having real scripts for this. If I'm doing bash scripting, I should do bash scripting, with shellcheck and set -e and the like
+
+Apply is failing because there's not a layer folder in the build directory. Need to check why we're not creating that automatically.
+
+Ahhh. It's because our uv.lock hash didn't change. Maybe we marry the hash of the lock file with the name of the parent directory? That way, when we create a new folder, it'll go. Really, what I'd like is for it to try to do the thing, and if it doesn't work, fall back to the slow route of recreating the build dir. But I don't think terraform appreciates that kind of procedural logic...
+
+ Hmm. The bigger issue, though, is that we have dev and prod using the same backend. That means we'll always have these issues where we have to regenerate it when we switch between them.
+
+Maybe triggersreplace can be smarter than the hashing I'm doing? Can I have it check existence of the folder as well?
