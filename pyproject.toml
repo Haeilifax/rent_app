@@ -4,50 +4,54 @@ version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = [
-    "boto3>=1.38.16",
-    "jinja2>=3.1.6",
-]
+dependencies = ["boto3>=1.38.16", "jinja2>=3.1.6"]
 
 # We're using Poe as a task runner. See:
 # https://poethepoet.natn.io/index.html
 # https://github.com/astral-sh/uv/issues/5903#issuecomment-2814231089
 [tool.poe.tasks]
 [tool.poe.tasks.run]
-    shell = "STAGE=prod ISLOCAL='database/database.db' python -c 'import rent_app; rent_app.lambda_handler({\"requestContext\": {\"http\": {\"method\": \"GET\", \"path\": \"/\"}}}, None)'"
+shell = "STAGE=prod ISLOCAL='database/database.db' python -c 'import rent_app; rent_app.lambda_handler({\"requestContext\": {\"http\": {\"method\": \"GET\", \"path\": \"/\"}}}, None)'"
+
 [tool.poe.tasks.real_run]
-    shell = "STAGE=prod python -c 'import rent_app; rent_app.lambda_handler({\"requestContext\": {\"http\": {\"method\": \"GET\", \"path\": \"/\"}}}, None)'"
+shell = "STAGE=prod python -c 'import rent_app; rent_app.lambda_handler({\"requestContext\": {\"http\": {\"method\": \"GET\", \"path\": \"/\"}}}, None)'"
+
+[tool.poe.tasks.worktree]
+shell = "git worktree add -b feature/${feature_name} worktree-feature_${feature_name} && cd worktree-feature_${feature_name} && uv sync && cd terraform && terraform init"
+args = [
+  { "name" = "feature_name", "help" = "Name of the feature at the core of the branch" },
+]
+
 [tool.poe.tasks.apply]
-    shell = "terraform apply -auto-approve"
-    cwd = "./terraform"
+shell = "terraform apply -auto-approve"
+cwd = "./terraform"
+
 [tool.poe.tasks.dev_env]
-    cmd = "ipython -c \"from os import environ as env; env['STAGE'] = 'prod'; env['ISLOCAL'] = '../../database/database.db'; import sqlite3; db = sqlite3.connect('database.db')\" -i"
-    cwd = "./src/rent_app"
-    use_exec = true
+cmd = "ipython -c \"from os import environ as env; env['STAGE'] = 'prod'; env['ISLOCAL'] = '../../database/database.db'; import sqlite3; db = sqlite3.connect('database.db')\" -i"
+cwd = "./src/rent_app"
+use_exec = true
 
 [tool.poe.tasks.test]
-    cmd = "pytest"
+cmd = "pytest"
 
 [tool.poe.tasks.debug_test]
-    cmd = "pytest -s"
+cmd = "pytest -s"
 
 [tool.poe.tasks.init]
-    shell = "uv sync --dev; terraform init"
-    cwd = "./terraform/"
+shell = "uv sync --dev; terraform init"
+cwd = "./terraform/"
 
 [dependency-groups]
 dev = [
-    "ipdb>=0.13.13",
-    "ipython>=9.2.0",
-    "pytest>=8.4.0",
-    "types-boto3[s3]>=1.38.16",
+  "ipdb>=0.13.13",
+  "ipython>=9.2.0",
+  "pytest>=8.4.0",
+  "types-boto3[s3]>=1.38.16",
 ]
 
 # Added as recommended in https://docs.pytest.org/en/stable/explanation/goodpractices.html#tests-outside-application-code
 [tool.pytest.ini_options]
-addopts = [
-    "--import-mode=importlib",
-]
+addopts = ["--import-mode=importlib"]
 
 [build-system]
 requires = ["hatchling"]
