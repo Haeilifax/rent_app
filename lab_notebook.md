@@ -1250,4 +1250,10 @@ This... finally marks the end of the AddPOSTRequests branch. It's been a long on
 
 Looking at the pull request, this one definitely got away from me. I'm too used to working in a big central branch, and need to start being more conscientious about spinning up new branches when I need to add a new feature.
 
-I should move to Flask, learn that framework
+# 2025-11-10
+
+I'm going to just let Claude rip on making CSS for this. I don't have fantastic ideas for what I want it to look like, but he might give me a good jumping off point
+
+I specifically want to only use raw CSS (no Bootstrap, or Tailwind, or etc).
+
+I'm currently paying for a month of Pro, so we'll see how much we get done
