@@ -1257,3 +1257,14 @@ I'm going to just let Claude rip on making CSS for this. I don't have fantastic 
 I specifically want to only use raw CSS (no Bootstrap, or Tailwind, or etc).
 
 I'm currently paying for a month of Pro, so we'll see how much we get done
+
+Okay, git worktree task set up in Poe. Final structure is:
+`git worktree add -b feature/${feature_name} worktree-feature_${feature_name}`
+
+Where ${feature_name} is the name of the feature (surprising no one)
+
+Needed additional updates -- need to also run terraform init inside the newly created directory.
+
+Tried to add a sequence task wrapping it -- first run the git worktree, then cd in (will this even work?) and then do the poe terraform init task. However, we can't use args (which we're using for the feature_name) inside sequence tasks.
+
+I want a better task runner than poe -- or maybe I need to just start using it stupider, and forcing all of the shell commands into a single line
