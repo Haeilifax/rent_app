@@ -1355,6 +1355,7 @@ These two goals are also important.
 
 I think the priority list is
 
+-[] Commit last set of changes to main
 -[] Start interpreting None as 0 for Amounts
 -[] When calculating remaining rent, interpret None as 0
 -[] Allow month selection in UI (entails also making it dyanmically passable)
@@ -1368,3 +1369,7 @@ We also need to test this on mobile, and possibly make changes there
 
 -[] Test on mobile
 -[] Make any changes needed for mobile
+
+Okay, onward and upward
+
+
