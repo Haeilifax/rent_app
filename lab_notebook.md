@@ -1278,3 +1278,66 @@ Ahhh. It's because our uv.lock hash didn't change. Maybe we marry the hash of th
  Hmm. The bigger issue, though, is that we have dev and prod using the same backend. That means we'll always have these issues where we have to regenerate it when we switch between them.
 
 Maybe triggersreplace can be smarter than the hashing I'm doing? Can I have it check existence of the folder as well?
+
+# 2025-12-03
+
+Here for our monthly touch of this project. Our issue last time was that we were trying to deploy up to test the CSS changes Claude made, but our layer wasn't getting generated (because the backend thought that it already existed, and nothing changed that should have changed it)
+
+Can we add just a simple "file_exists" type check (store a 1 or 0 in the backend, or hashed in with the other check)? Because that would cause the layer to be regenerated when:
+- The uv.lock file changes (so our deps change -- there's probably a cleaner way to do this)
+    - Regardless of whether this change is due to the deps actually changing, or us just switching to a different environment -- this isn't how I'd handle this for enterprise, but it's functional for now
+- The file doesn't exist
+    - Typically this will happen when we generate a new environment
+
+Are there any other times the layer should be reuploaded?
+- The uv.lock will change if we upgrade our deps
+- The layer file might be changed manually, but that's not a central case -- if it was changed manually, it can be uploaded manually, and I don't expect that to cause terraform to freak out?
+
+We don't actually want to hash in the fileexists bool -- that will cause it to run twice, because first the file won't exist, then it will
+
+Instead, we want to OR it in somehow -- we want it to fire when the hash changes, or if the fileexists is false
+
+fileexists function: https://developer.hashicorp.com/terraform/language/functions/fileexists
+
+(Quick aside about triggers_replace: the fact that we have an object specified for it is just a coincidence of how we're using it -- any data type is viable, it'll just get compared on equality. I wonder if the same keys in a different order would count as a different object?)
+
+Okay, here's a thought: We have two states, A and B . Both are equally valid states, and don't denote whether the layer is appropriate. However, when the fileexists is false, we query the state and change it to the other one (how do we do this? File locally? backend access? How do we, within the terraform file, determine features of the terraform deploy? Does the terraform command let us query these things?). This changes the state, and allows us to deploy. If something goes wrong, and the layer still doesn't exist, we'll still retry in the future (but we don't deal with the possibility of the state changing without the layer being appropriately deployed, even though it now exists. That is, if we go no layer -> create layer -> change state -/error here/> deploy layer, we'll find the layer created, the state normal, and no layer deployed. However, we'd have the same issue with anytime the state was written without an appropriate deploy, so terraform must be structured that state change and deploy are atomic, or that state change comes only after a successful deploy, which is more likely)
+
+Hmm. Claude suggested a bunch of stuff (some of it dumb), but one thing it metioned was that uv won't reinstall the packages if they already exist, and will be very quick, so it wouldn't hurt to just run it every time. I didn't expect this to be the case (because I'm using the --target flag, which I believe in pip doesn't treat the location appropriately for things like upgrades, removal etc), but testing looks like uv audits and says that it's good, without reinstalling.
+
+So if we accept that as alright, will the zip just run every time? Does it already?
+
+https://github.com/hashicorp/terraform-provider-archive/issues/117
+https://github.com/hashicorp/terraform-provider-archive/issues/78#issuecomment-3146609959
+- Why are people still using null_resource?
+- Definitely supposed to be using terraform_data at this point: https://registry.terraform.io/providers/hashicorp/null/latest/docs/guides/terraform-migration
+
+It doesn't natively run every time, but if we use depends_on, it will -- can we just use the md5 hash of the uv.lock file?
+- This would put us back in the same spot, because we also want it to run on missing file
+- We could, by the way, using replace_triggered_by -- that should allow us to use the hash as one of the factors
+- But also, what the links above are saying is that it's running during the planning step, and needs the terraform_data block to make sure it runs during apply.
+
+Let's try just doing the stupid thing that'll cause it to run twice, to check whether it'll actually only run twice, or if it'll run everytime (not totally sure how the archive file will work. Also, need to see how long it takes)
+
+Need new provider to use direxists
+
+Deps took 13 seconds to generate
+
+Confirmed, the first two times when the build dir doesn't exist cause recreates
+
+Hmm. Can I just have the creation as its own resource?
+- wouldn't this run into the same issue? We can only make things happen when things differ from the stored state
+
+We need to figure out the solution at a later time, this has already taken an additional 2 hours, and I'm not sure we've actually gotten anywhere (outside the fact that it's now pushing the changed code up). I'm going to check out the CSS
+
+TODO: Figure out how to make the terraform apply only run if the uv.lock has changed or if the layer dir doesn't exist
+
+Wow. It's real ugly. But it's not the worst! And it's probably better than nothing
+
+I should add some more visual testing tools -- reset database, for one.
+
+-[] Add button to reset database for visual testing
+-[] Add ability to see each rent collection record
+-[] Add real-world tenants to DB
+-[] Add month name to top
+-[] Allow month selection in ui
