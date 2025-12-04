@@ -1341,3 +1341,30 @@ I should add some more visual testing tools -- reset database, for one.
 -[] Add real-world tenants to DB
 -[] Add month name to top
 -[] Allow month selection in ui
+
+# 2025-12-04
+
+Maybe going to move back to nvim -- helix is kinda annoying, I need a better theme for it, and honestly I'd like to have a full fledged code environment (not necessarily an IDE, but something that affords exploration a little better, lets me open up new terminals in the same location easily). I much prefer its way of editing text to nvim though -- the object first selection process ends up with me feeling a lot more confident that I know what's going to happen, instead of attempting the thing, failing, undoing, trying a new thing, and continuing until I get the right text object. Maybe that just means I'm not good enough with vim motions and objects, but also, how long will it take me to get that good? I've been trying down this path for a while, and while I'm good enough for normal text editing (I'm definitely happy to use it for purposes where it's mostly straightforward writing, little editing), I'm not good enough to get as much out of it as I do out of VSCode. Maybe that's the issue -- I want vim with VSCode bindings XD. But yeah, highlighting things, having a command palette type thing to write what I want and hopefully find it (even with just fuzzy search), easy multi-cursor use (either ctrl-d or ctrl-arrows)... These are the things that I'm missing.
+
+But that's irrelevant to what I'm working on right now. Right now, I'm diving back in, going to commit what Claude did for CSS (and what I did for terraform). After that... Let me check the goals doc, see if I'm forgetting anything, or if I can mostly use the list above.
+
+-[] Start interpreting None as 0 for Amounts
+-[] When calculating remaining rent, interpret None as 0
+
+These two goals are also important.
+
+I think the priority list is
+
+-[] Start interpreting None as 0 for Amounts
+-[] When calculating remaining rent, interpret None as 0
+-[] Allow month selection in UI (entails also making it dyanmically passable)
+-[] Add month name to top
+-[] Add ability to see each rent collection record
+-[] Add real-world tenants to DB
+
+(This removes the button for visual testing -- we'll add that in dev once the first prod push goes out)
+
+We also need to test this on mobile, and possibly make changes there
+
+-[] Test on mobile
+-[] Make any changes needed for mobile

@@ -6,7 +6,12 @@
 -[] Update to only reach out to S3 if explicitly told we're not running locally
 -[] Add text to CLAUDE.md telling Claude not to update any file in the tests directory
 -[] Start interpreting None as 0 for Amounts
--[] When calculating remaining rent, interpret None as 0
+-[] Allow month selection in UI (entails also making it dyanmically passable)
+-[] Add month name to top
+-[] Add ability to see each rent collection record
+-[] Add real-world tenants to DB
+-[] Test on mobile
+-[] Make any changes needed for mobile[] When calculating remaining rent, interpret None as 0
 
 # Completed
 -[X] Update our code to use resource imports for the templates and stylesheets
