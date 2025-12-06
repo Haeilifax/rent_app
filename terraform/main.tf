@@ -17,6 +17,11 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 5"
     }
+    # Required to use `direxists`, used for layer generation
+    local = {
+      source = "hashicorp/local"
+      version = "~> 2"
+    }
   }
 
   required_version = ">= 1.11.3"
@@ -56,7 +61,7 @@ resource "terraform_data" "install_dependencies" {
   }
 
   triggers_replace = {
-    dependencies_versions = filemd5("../uv.lock")
+    dependencies_versions = provider::local::direxists("../build/layer") ? filemd5("../uv.lock") : ""
   }
 }
 
