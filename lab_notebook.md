@@ -1372,4 +1372,18 @@ We also need to test this on mobile, and possibly make changes there
 
 Okay, onward and upward
 
+Changes committed.
 
+Just did a little deviation for working on nvim commands -- can't map ctrl+number, buffers are annoying (how can I more intentionally close buffers that I intend to be temporary?). Onward and upward.
+
+Moving to Kate as editor. Going to try it out at least
+
+God I've forgotten how nice the mouse and being able to visually see things is. Now need to figure out how to turn off suggestions for .md docs
+
+This is incredibly annoying. I'm going back to vscode. Kate keeps highlighting some random text, I can't tell why, and it tries to do autocomplete while I'm typing in this markdown doc, which is very much not what I want
+
+And now my computer fans spin up and start screaming... Always a tradeoff.
+
+I liked the style before of having one editor for my labnotes, and a different one for my worktree work -- maybe I continue doing that, use helix for the labnotes, and then have code solely in the worktree?
+
+Or I just continue using helix, and deal. Maybe change this theme a little bit.

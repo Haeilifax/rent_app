@@ -11,7 +11,8 @@
 -[] Add ability to see each rent collection record
 -[] Add real-world tenants to DB
 -[] Test on mobile
--[] Make any changes needed for mobile[] When calculating remaining rent, interpret None as 0
+-[] Make any changes needed for mobile
+-[] When calculating remaining rent, interpret None as 0
 
 # Completed
 -[X] Update our code to use resource imports for the templates and stylesheets
