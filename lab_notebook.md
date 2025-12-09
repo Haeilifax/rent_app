@@ -1387,3 +1387,61 @@ And now my computer fans spin up and start screaming... Always a tradeoff.
 I liked the style before of having one editor for my labnotes, and a different one for my worktree work -- maybe I continue doing that, use helix for the labnotes, and then have code solely in the worktree?
 
 Or I just continue using helix, and deal. Maybe change this theme a little bit.
+
+# 2025-12-08
+
+Did a little bit of play at the end of the last session with making a new worktree (in addition to changing my helix theme), but didn't write anything about it. The issue seen was that the poe task for creating a new worktree assumes that everything is a feature (and names it as such). This was an issue because I was trying to create a bugfix worktree for the fact that zero is read as None in the frontend.
+
+I tried just changing it so that the full branch name was passed to the task, and used for the branch name and the directory. The issue with this is that the branchname will typically have a slash in it (bugfix/makeNoneZero, for example), which will get read as creating a nested directory (just checked, it's impossible to have a slash in a file / directory name, even if we had wanted to go down that very stupid path, pun not intended).
+
+The solution would be to strip out all slashes, and turn them into underscores (as we do manually in the current iteration of the task, for feature only). We will leave this for a future update, when we haven't just done a bunch of axe sharpening.
+
+For now, we will listen to the wise words of our elders: it's not a bug, it's a feature (request)
+
+We also added in plugin caching to terraform, because the time it took for the AWS plugin to install each time on the cafe wifi was far too long. See https://developer.hashicorp.com/terraform/cli/config/config-file for directions on creating config file, and syntax for plugin caching.
+
+Moving onto the actual work of today, there's an issue where, when there are no rents collected, the display on the UI is "None" instead of the appropraite numeric value (the full value of the rent). Worktree's already named "makeNoneZero" because I didn't have full understanding of the issue when I created it -- it should actually be that the None should be the full rent amount
+
+I believe the issue is due to the sum of the collected rents being NULL when there are no CollectedRent records, and then doing any math with NULL results in NULL. To resolve this we will
+-[] Create a test that shows this behavior
+-[] Update the SQL file to coalesce the sum of the rents with 0
+-[] Confirm this resolves the issue and makes the test green
+
+Goodness, writing this test is annoying without having the get function broken out into actual reasonable and testable parts. That'll be a priority after 1.0. We may just need to settle for a fairly brittle test
+
+Okay, written -- we're directly interacting with the db, and directly interacting with the get_rents.sql file, so this is a test of the file rather than of our code, but it'll do for now. We're also moving the db_path to the outside of the autoload test fixture so that we can use it in this test -- this isn't my favorite thing (though for unit tests we need it), but it'll do. We're also depending on the test data file not having anything after the year 2100, but I think that's safe, especially since it'll be somewhat obvious what's happening if the test fails.
+
+And corrected to coalesce the rents -- we have a pass now on the test. Let's see if this fixed the issue in prod.
+
+Fixed! Merging
+
+Also noticed another thing I don't like -- Paid defaults to the full amount. It should default to 0, unless paid in full is checked.
+-[] Make paid default to 0
+
+It's annoying, and potentially work-losing to clean up a worktree under my current system after merging the branch. My current system is:
+1. Merge the branch in github and pull to local
+2. Delete the worktree: `rm -rf worktree-feature-{name}`
+3. Prune the worktrees: `git worktree prune`
+4. Delete the branch: `git branch -d feature/{name}`
+
+If I didn't delete the right worktree folder (deleted one that was still in progress, for example), this would cause me to lose work. I'd love something that had a little more stopgap from stupid mistakes.
+
+I see some people online have complex solutions to this problem -- nothing, though, that I really want to use and accept the difficulties and potential issues of using someone elses code.
+
+Going to fix the paid thing now
+
+Error because the build/layer directory doesn't exist when trying to apply, good lord.
+
+This is an edge case I didn't think about. What happens when you build it once, the state is that the directory didn't exist, and then you try to build it again without the directory existing? Well, it doesn't try to rebuild, because the state hasn't changed.
+
+So our solution here is probably to use the sentinel file we had read about / talked to Claude about before. The idea being, we create a file in the build directory on creation, and key off the existence and contents of that to know if we're in a new folder. But... Now that I reread that and think further, I don't believe this will actually fix our issue -- because we would have gone from a state of "missing" to again, a state of "missing", without ever having actually seen the file.
+
+What a trashfire.
+
+Okay, so we're kinda stumped for what to do here
+
+Asked Claude about it, with the additional information -- his suggestion is to have the uv pip install run every time (which I'm fine with), and separately key the archive off of the uv.lock file (well, that was one of his 5 suggestions, and not even his actual suggested one, but it's the one I like the most). I need to confirm that I can have the archive file be triggered by the uv.lock file, but otherwise seems like a reasonable idea.
+
+Ahh, actually, what I didn't see is that Claude was suggesting moving the archiving process to a script, instead of letting terraform do it. Honestly, I need to stop being stupid and just do that. Fully move to an external bash script for archiving, because Terraform's archive isn't going to give me the tools I need to implement my conditional logic
+
+It seems like terraform is trying to be declaritive, but not able to handle odd starting conditions. This is the real issue with having a backend state totally divorced from the things you're trying to manage.
