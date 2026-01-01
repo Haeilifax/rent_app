@@ -1469,3 +1469,20 @@ I've gone to Claude again, and poked it to work on this, asked it to ultrathink 
 Which is a very good description of the problem. It gave an idea of having two keys in the triggers_replace of the uv install terraform_data, one that is the lock file hash (what we want to key off of), and then one that's a check if the layer dir exists -- if it doesn't, it uses (in claude's case) the uv.lock hash, if it does, it uses "exists".
 
 My thought on this is, what if we have it be the timestamp when the layer doesn't exist? That's guaranteed to be different everytime it doesn't exist, which solves the big issue (not creating the layer when we change worktrees), if not the oscillation issue. This might be our best fallback.
+
+# 2026-01-01
+
+We're going to send it with the timestamp idea. 
+
+So, process is:
+
+If layer doesn't exist -> layer exists -> single rebuild
+If layer doesn't exist -> layer still doesn't exist (as in worktree changing) -> timestamp diff, rebuild
+If layer exists -> layer exists -> no rebuild, since we wouldn't use timestamp
+If layer exists -> layer doesn't exist -> we'll do two rebuilds
+
+Which is all of the possible states, and maxes out at one more rebuild than necessary. It also doesn't do unnecessary rebuilds if we switch between worktrees with built layers which have the same uv.lock (and if they have the same uv.lock, they darn well better have the same layer... right? Oh no, is there a world where the uv.locks are the same but layers are different?)
+- Well, let's think it through -- we're rebuilding off the uv.lock file, that's the only way a layer gets generated. So if we build the layer, then change to a different worktree with a different uv.lock, update that uv.lock, then rebuild the layer there, then port the uv.lock change to the original worktree... we end up with different layer hashes.
+- Okay, so we should also include the layer hash in our check
+
+Testing looks good. I think we're going to say good and maybe put this behind us once and for all.
