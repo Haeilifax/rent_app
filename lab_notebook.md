@@ -1486,3 +1486,9 @@ Which is all of the possible states, and maxes out at one more rebuild than nece
 - Okay, so we should also include the layer hash in our check
 
 Testing looks good. I think we're going to say good and maybe put this behind us once and for all.
+
+Short extra bit of work -- we're going to work on Route53 and getting a domain for this and other personal projects. I'd like a personal domain, that I can just fan out to my different things
+
+In order to do this, I need to start by exploring Route53 -- I'm going to poke around in the console, and see how easy it is to buy a domain (I'd like davidarcuri.com, or davidbarcuri.com, but maybe it's a little aggressive to hope for that). Once I have a domain, I'll need to look into whether it's best to manually apply domains to properties, or if I can use Terraform to do it simply.
+
+Okay! I was able to buy davidarcuri.com, which is really nice. It's currently processing.
