@@ -1492,3 +1492,69 @@ Short extra bit of work -- we're going to work on Route53 and getting a domain f
 In order to do this, I need to start by exploring Route53 -- I'm going to poke around in the console, and see how easy it is to buy a domain (I'd like davidarcuri.com, or davidbarcuri.com, but maybe it's a little aggressive to hope for that). Once I have a domain, I'll need to look into whether it's best to manually apply domains to properties, or if I can use Terraform to do it simply.
 
 Okay! I was able to buy davidarcuri.com, which is really nice. It's currently processing.
+
+# 2026-01-02
+
+Looking to see about using the domain today. I can apply it to a Load Balancer or the like, and point that at my Lambda, but I wonder if I can even more easily just point a subdomain at the Lambda, using the Hosted DNS kinda like a load balancer.
+
+I got an email from noreply@registrar.amazon, with a link to verify my email -- it got thrown into my spam folder and now I'm a little worried about it. Going to google and see what other people say
+- Looks like it's legit, AWS docs call it out: https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/domain-click-email-link.html
+
+https://stackoverflow.com/questions/71815143/how-can-i-call-my-aws-lambda-function-url-via-a-custom-domain
+- Says you need to use CloudFront or another intermediary layer (some people also talking about cloudflare?)
+
+https://stackoverflow.com/questions/52014150/lambda-function-custom-domain
+- This talks about Lambda@Edge, or using an API Gateway in front of it
+- Lambda@Edge is interesting, but just the naming sounds expensive
+
+https://docs.aws.amazon.com/apigateway/latest/developerguide/how-to-custom-domains.html
+- Docs for how to do this with API Gateway
+
+https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/lambda-at-the-edge.html
+- Lambda@Edge guide
+
+https://docs.aws.amazon.com/lambda/latest/dg/urls-configuration.html
+- Docs for the basic URL config
+- I need to think about CORS
+
+https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/DownloadDistS3AndCustomOrigins.html
+- Cloudfront Distribution docs
+- Cloudfront Distribution vs Lambda@Edge? Same, different, aligned?
+
+https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/DownloadDistS3AndCustomOrigins.html#concept_lambda_function_url
+- Specifically talking about Lambda Function URLS
+- > To use a Lambda function URL as the origin for a CloudFront distribution, specify the full domain name of the Lambda function URL as the origin domain.
+- > When you use a Lambda function URL as the origin for a CloudFront distribution, the function URL must be publicly accessible. To do so, use one of the following options:
+    >
+    > If you use origin access control (OAC), the AuthType parameter of the Lambda function URL must use the AWS_IAM value and allow the lambda:InvokeFunctionUrl and lambda:InvokeFunction permissions in a resource-based policy. For more information about using Lambda function URLs for OAC, see Restrict access to an AWS Lambda function URL origin.
+    >
+    > If you don't use OAC, you can set the AuthType parameter of the function URL to NONE and allow the lambda:InvokeFunctionUrl permission in a resource-based policy.
+
+https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/edge-functions-choosing.html
+- What a lovely guide, and exactly what I asked for
+- Oops, actually it's cloudfront functions vs lambda @ edge. Ah well, worth reading
+- Cloudfront functions are just tiny middleware for dealing with programmatic editing of headers and content
+- Lambda @ Edge is full on lambda
+
+I kinda think Cloudfront Distribution is a pre-req for Lambda@Edge, that makes sense. I'm going to go make one, see what happens
+
+https://aws.amazon.com/cloudfront/pricing/
+- Well, let's check out pricing real quick first
+- Oh, it looks like I can get a flat-rate plan on the free tier?
+
+I was concerned I would need a multi-tenant architecture (since I'm looking to route to multiple services), and that's only available on the Pay-As-You-Go plan, but it looks like it isn't necessary, that's definitely for more SaaS'sy people https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/distribution-config-options.html
+
+Wildcard cert or no?
+- https://old.reddit.com/r/AskNetsec/comments/wubj9v/certificates_wildcard_or_no/ has details that make me recommend no -- it's ease that I don't need, especially because AWS is going to manage my certs basically automatically
+
+Got error trying to make Cloudfront Distribution -- "parameter origin name must be a domain name"
+- https://repost.aws/questions/QUAxBjBGbkS7mi1H3EIUm1nA/the-parameter-origin-name-must-be-a-domain-name-error-when-trying-to-use-aws-cloudfront-vpcorigin
+    - Not helpful
+- I went back and looked at it -- I think it didn't like the slash, I removed it and it worked
+
+Sooooo not sure it's actually going to work like I want it to -- well, right now nothings working, but even more so I don't know whether it could work, it looks like everything is just based off my one origin? Might need to do my own proxying...
+
+Okay, I've got the routing set up, but it's pointing everything at my pushups site
+- It looks like the recommended route is just use more distributions? https://old.reddit.com/r/aws/comments/ehkpdc/cloudfront_distributions_for_subdomains_how_do/
+    - Gonna give it a try
+
