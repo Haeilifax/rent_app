@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/stylesheet.css">
+    <title>Admin - Units</title>
+</head>
+<body>
+    <h1>Manage Units</h1>
+
+    <nav class="admin-nav">
+        <a href="/admin">Back to Admin</a>
+        <a href="/">Back to App</a>
+    </nav>
+
+    <div class="add-form">
+        <h2>Add New Unit</h2>
+        <form method="POST" action="/admin/units">
+            <div class="form-row">
+                <div class="form-field">
+                    <label for="address">Address</label>
+                    <input type="text" id="address" name="address" required placeholder="123 Main St, Apt 1">
+                </div>
+            </div>
+            <button type="submit">Add Unit</button>
+        </form>
+    </div>
+
+    <form method="POST">
+        <div class="table-container">
+        <table>
+            <tr>
+                <th>ID</th>
+                <th>Address</th>
+                <th>Created</th>
+                <th>Actions</th>
+            </tr>
+            {% for unit in units %}
+            <tr>
+                <td>{{ unit.id }}</td>
+                <td><input type="text" name="address_{{ unit.id }}" value="{{ unit.address }}"></td>
+                <td>{{ unit.created_on }}</td>
+                <td class="actions">
+                    <button type="submit" formaction="/admin/units/edit" name="id" value="{{ unit.id }}" class="btn-action btn-save">Save</button>
+                    <button type="submit" formaction="/admin/units/delete" name="id" value="{{ unit.id }}" class="btn-action btn-delete">Delete</button>
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+        </div>
+    </form>
+</body>
+</html>

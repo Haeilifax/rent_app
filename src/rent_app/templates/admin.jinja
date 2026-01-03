@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/stylesheet.css">
+    <title>Admin Dashboard</title>
+</head>
+<body>
+    <h1>Admin Dashboard</h1>
+
+    <nav class="admin-nav">
+        <a href="/">Back to App</a>
+    </nav>
+
+    <div class="admin-cards">
+        <a href="/admin/units" class="admin-card">
+            <h2>Units</h2>
+            <p>{{ unit_count }} units</p>
+        </a>
+        <a href="/admin/tenants" class="admin-card">
+            <h2>Tenants</h2>
+            <p>{{ tenant_count }} tenants</p>
+        </a>
+        <a href="/admin/leases" class="admin-card">
+            <h2>Leases</h2>
+            <p>{{ lease_count }} leases</p>
+        </a>
+        <a href="/admin/rents" class="admin-card">
+            <h2>Collected Rents</h2>
+            <p>{{ rent_count }} records</p>
+        </a>
+    </div>
+</body>
+</html>

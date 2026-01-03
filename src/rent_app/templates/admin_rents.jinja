@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/stylesheet.css">
+    <title>Admin - Collected Rents</title>
+</head>
+<body>
+    <h1>Manage Collected Rents</h1>
+
+    <nav class="admin-nav">
+        <a href="/admin">Back to Admin</a>
+        <a href="/">Back to App</a>
+    </nav>
+
+    <div class="add-form">
+        <h2>Add New Collected Rent</h2>
+        <form method="POST" action="/admin/rents">
+            <div class="form-row">
+                <div class="form-field">
+                    <label for="lease">Lease</label>
+                    <select id="lease" name="lease" required>
+                        <option value="">Select a lease...</option>
+                        {% for lease in leases %}
+                        <option value="{{ lease.id }}">{{ lease.tenant_name }} @ {{ lease.address }} (${{ lease.rent }}/mo)</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-field">
+                    <label for="amount">Amount ($)</label>
+                    <input type="number" id="amount" name="amount" required step="0.01" min="0" placeholder="1000.00">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-field">
+                    <label for="collected_for">For Month</label>
+                    <input type="date" id="collected_for" name="collected_for" required>
+                </div>
+                <div class="form-field">
+                    <label for="collected_on">Collected On</label>
+                    <input type="date" id="collected_on" name="collected_on" required>
+                </div>
+            </div>
+            <button type="submit">Add Collected Rent</button>
+        </form>
+    </div>
+
+    <form method="POST">
+        <div class="table-container">
+        <table>
+            <tr>
+                <th>ID</th>
+                <th>Lease</th>
+                <th>Amount</th>
+                <th>For Month</th>
+                <th>Collected On</th>
+                <th>Actions</th>
+            </tr>
+            {% for rent in rents %}
+            <tr>
+                <td>{{ rent.id }}</td>
+                <td>
+                    <select name="lease_{{ rent.id }}">
+                        {% for lease in leases %}
+                        <option value="{{ lease.id }}" {{ "selected" if lease.id == rent.lease else "" }}>{{ lease.tenant_name }} @ {{ lease.address }} (${{ lease.rent }}/mo)</option>
+                        {% endfor %}
+                    </select>
+                </td>
+                <td><input type="number" name="amount_{{ rent.id }}" value="{{ rent.amount }}" step="0.01" min="0"></td>
+                <td><input type="date" name="collected_for_{{ rent.id }}" value="{{ rent.collected_for }}"></td>
+                <td><input type="date" name="collected_on_{{ rent.id }}" value="{{ rent.collected_on }}"></td>
+                <td class="actions">
+                    <button type="submit" formaction="/admin/rents/edit" name="id" value="{{ rent.id }}" class="btn-action btn-save">Save</button>
+                    <button type="submit" formaction="/admin/rents/delete" name="id" value="{{ rent.id }}" class="btn-action btn-delete">Delete</button>
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+        </div>
+    </form>
+</body>
+</html>

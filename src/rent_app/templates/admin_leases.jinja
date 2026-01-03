@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/stylesheet.css">
+    <title>Admin - Leases</title>
+</head>
+<body>
+    <h1>Manage Leases</h1>
+
+    <nav class="admin-nav">
+        <a href="/admin">Back to Admin</a>
+        <a href="/">Back to App</a>
+    </nav>
+
+    <div class="add-form">
+        <h2>Add New Lease</h2>
+        <form method="POST" action="/admin/leases">
+            <div class="form-row">
+                <div class="form-field">
+                    <label for="tenant">Tenant</label>
+                    <select id="tenant" name="tenant" required>
+                        <option value="">Select a tenant...</option>
+                        {% for tenant in tenants %}
+                        <option value="{{ tenant.id }}">{{ tenant.name }} ({{ tenant.address }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-field">
+                    <label for="rent">Monthly Rent ($)</label>
+                    <input type="number" id="rent" name="rent" required step="0.01" min="0" placeholder="1000.00">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-field">
+                    <label for="start_date">Start Date</label>
+                    <input type="date" id="start_date" name="start_date" required>
+                </div>
+                <div class="form-field">
+                    <label for="end_date">End Date (optional)</label>
+                    <input type="date" id="end_date" name="end_date">
+                </div>
+            </div>
+            <button type="submit">Add Lease</button>
+        </form>
+    </div>
+
+    <form method="POST">
+        <div class="table-container">
+        <table>
+            <tr>
+                <th>ID</th>
+                <th>Tenant</th>
+                <th>Rent</th>
+                <th>Start</th>
+                <th>End</th>
+                <th>Actions</th>
+            </tr>
+            {% for lease in leases %}
+            <tr>
+                <td>{{ lease.id }}</td>
+                <td>
+                    <select name="tenant_{{ lease.id }}">
+                        {% for tenant in tenants %}
+                        <option value="{{ tenant.id }}" {{ "selected" if tenant.id == lease.tenant else "" }}>{{ tenant.name }} ({{ tenant.address }})</option>
+                        {% endfor %}
+                    </select>
+                </td>
+                <td><input type="number" name="rent_{{ lease.id }}" value="{{ lease.rent }}" step="0.01" min="0"></td>
+                <td><input type="date" name="start_date_{{ lease.id }}" value="{{ lease.start_date }}"></td>
+                <td><input type="date" name="end_date_{{ lease.id }}" value="{{ lease.end_date or '' }}"></td>
+                <td class="actions">
+                    <button type="submit" formaction="/admin/leases/edit" name="id" value="{{ lease.id }}" class="btn-action btn-save">Save</button>
+                    <button type="submit" formaction="/admin/leases/delete" name="id" value="{{ lease.id }}" class="btn-action btn-delete">Delete</button>
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+        </div>
+    </form>
+</body>
+</html>
