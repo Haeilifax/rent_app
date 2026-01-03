@@ -7,8 +7,44 @@
     <title>Document</title>
 </head>
 <body>
-    <h1>MONTH</h1>
-    <form method="POST">
+    <h1>{{ selected_date.strftime('%B %Y') }}</h1>
+    <button type="button" class="btn-secondary" onclick="document.getElementById('month-select-modal').showModal()">Change Month</button>
+    <dialog id="month-select-modal">
+        <div class="modal-content">
+            <button type="button" class="modal-close" onclick="document.getElementById('month-select-modal').close()">&times;</button>
+            <div class="modal-header">
+                <h2>Select Month</h2>
+            </div>
+            <form class="modal-form" name="Date Selection">
+                <div class="form-group">
+                    <label for="month-select">Month</label>
+                    <select name="month" id="month-select">
+                        <option {{ "selected" if selected_date.month == 1 }} value="1">January</option>
+                        <option {{ "selected" if selected_date.month == 2 }} value="2">February</option>
+                        <option {{ "selected" if selected_date.month == 3 }} value="3">March</option>
+                        <option {{ "selected" if selected_date.month == 4 }} value="4">April</option>
+                        <option {{ "selected" if selected_date.month == 5 }} value="5">May</option>
+                        <option {{ "selected" if selected_date.month == 6 }} value="6">June</option>
+                        <option {{ "selected" if selected_date.month == 7 }} value="7">July</option>
+                        <option {{ "selected" if selected_date.month == 8 }} value="8">August</option>
+                        <option {{ "selected" if selected_date.month == 9 }} value="9">September</option>
+                        <option {{ "selected" if selected_date.month == 10 }} value="10">October</option>
+                        <option {{ "selected" if selected_date.month == 11 }} value="11">November</option>
+                        <option {{ "selected" if selected_date.month == 12 }} value="12">December</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="year-select">Year</label>
+                    <select name="year" id="year-select">
+                        <option {{ "selected" if selected_date.year == 2025 }}>2025</option>
+                        <option {{ "selected" if selected_date.year == 2026 }}>2026</option>
+                    </select>
+                </div>
+                <button type="submit">Go To Month</button>
+            </form>
+        </div>
+    </dialog>
+    <form method="POST" name="Rent Collected">
         <table >
             <tr>
                 <th>Unit#</th>

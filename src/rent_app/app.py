@@ -63,10 +63,8 @@ def lambda_handler(event, context):
     local_resources = importlib.resources.files()
     method = event["requestContext"]["http"]["method"]
     path = event["requestContext"]["http"]["path"]
-
     if method == "GET":
-        print("GET Request")
-
+        print(f"GET Request for {path}")
         if path == "/stylesheet.css":
             # Serve CSS file
             print("Serving CSS file")
@@ -80,22 +78,28 @@ def lambda_handler(event, context):
             }
         elif path == "/":
             # Serve main page
+            query_parameters = event.get("queryStringParameters", {})
+            current_date = datetime.date.today()
+            month = int(query_parameters.get("month", current_date.month))
+            year = int(query_parameters.get("year", current_date.year))
             # TODO make this passed by client
-            month = datetime.datetime.now().isoformat()
+            selected_date = datetime.date(year, month, 1)
             db, _ = get_db_and_s3()
             cur = db.cursor()
             cur.execute(
-                local_resources.joinpath("get_rents.sql").read_text(), {"month": month}
+                local_resources.joinpath("get_rents.sql").read_text(), {"month": selected_date.isoformat()}
             )
             rents = cur.fetchall()
             env = Environment(
                 loader=PackageLoader("rent_app"), autoescape=select_autoescape()
             )
             template = env.get_template("index.jinja")
+            body = template.render({"rents": rents, "selected_date": selected_date})
+            print(body)
             return {
                 "statusCode": 200,
                 "headers": {"Content-Type": "text/html"},
-                "body": template.render({"rents": rents}),
+                "body": body,
             }
     elif method == "POST":
         print("POST Request")
@@ -108,7 +112,6 @@ def lambda_handler(event, context):
             if event.get("isBase64Encoded"):
                 body = base64.b64decode(body).decode("utf-8")
             form_data = urllib.parse.parse_qs(body)
-            print(f"{body=}")
 
             cur = db.cursor()
             month = datetime.datetime.now().isoformat()
@@ -120,15 +123,10 @@ def lambda_handler(event, context):
                 if values and values[0]:
                     amount = float(values[0])
                     lease_id = int(lease_id)
-
                     if amount > 0:  # Only insert records for non-zero amounts
-                        print(f"Record found: {lease_id=} ; {amount=} ; {month=} ; {collected_on=}")
                         records_to_insert.append(
                             (lease_id, amount, month, collected_on)
                         )
-                    else:
-                        print("No records being inserted")
-
             # Batch insert all records
             if records_to_insert:
                 print(f"{len(records_to_insert)} records found")
