@@ -1419,10 +1419,10 @@ Also noticed another thing I don't like -- Paid defaults to the full amount. It 
 -[] Make paid default to 0
 
 It's annoying, and potentially work-losing to clean up a worktree under my current system after merging the branch. My current system is:
-1. Merge the branch in github and pull to local
-2. Delete the worktree: `rm -rf worktree-feature-{name}`
-3. Prune the worktrees: `git worktree prune`
-4. Delete the branch: `git branch -d feature/{name}`
+~~1. Merge the branch in github and pull to local~~
+~~2. Delete the worktree: `rm -rf worktree-feature-{name}`~~
+~~3. Prune the worktrees: `git worktree prune`~~
+~~4. Delete the branch: `git branch -d feature/{name}`~~ (Upd. 2026-01-03 -- see entry)
 
 If I didn't delete the right worktree folder (deleted one that was still in progress, for example), this would cause me to lose work. I'd love something that had a little more stopgap from stupid mistakes.
 
@@ -1602,3 +1602,36 @@ Oh, also, we discovered that we "should" use 303 http code vs 302 for the redire
 - [] Update to use 303 http code for POST redirect
 
 And done! Had claude do the CSS, which I think is going to be The Way forevermore, at least for any project that I need to just look decent, instead of needing a specific branding or deep accuracy to design
+
+Need the modal centered -- asked claude to do it (because CSS is his bag now), easy game.
+
+Complete, Success, Wonderful. Let's pull down the priorities again:
+-[X] Commit last set of changes to main
+-[X] Start interpreting None as 0 for Amounts
+-[X] When calculating remaining rent, interpret None as 0
+-[X] Allow month selection in UI (entails also making it dyanmically passable)
+-[X] Add month name to top
+-[] Add ability to see each rent collection record
+-[] Add real-world tenants to DB
+-[] Test on mobile
+-[] Make any changes needed for mobile
+
+Ability to see each rent collection record is nice, but not necessary -- I want this to ship today. The last thing required is the real-world tenants for the DB -- Maybe I can just have Claude add a simple stupid admin panel? It would be given to me by default if I was using Django, but that would necessitate a lot of other things. I think one of my next steps (given that this project is primarily based around learning tech) is to convert it to a Flask project, and make using Flask my go-to baseline -- it looks a little bit better than just throwing raw python at Lambda/API Gateway.
+
+-[] Update to use Flask
+-[] Throw Claude at an Admin panel
+
+I'm going to prompt him to create a plan first. I expect this will work first shot, especially using Opus -- gonna run into issues at some point, just using Opus raw like this, but maybe it won't be soon?
+
+We've figured out the correct way to remove worktrees --
+git worktree remove '{path}'
+git branch -d {branch}
+
+This should avoid deleting any potential work, and simplifies the command dramatically
+
+Claude just made the admin panel, took him 10 minutes with marginal input from me. Let's see if it works...
+
+Manual testing -- buttons are falling off the page. Let me have him fix that, and then I think we're 1.0!
+
+Fixed, and sent off.
+
