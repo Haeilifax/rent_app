@@ -216,11 +216,25 @@ def lambda_handler(event, context):
             elif path == "/admin/units/delete":
                 unit_id = form_data.get("id", [""])[0]
                 if unit_id:
-                    cur.execute("SELECT COUNT(*) as cnt FROM Tenant WHERE unit = ? AND deleted_on IS NULL", (int(unit_id),))
-                    if cur.fetchone()["cnt"] == 0:
-                        cur.execute("UPDATE Unit SET deleted_on = CURRENT_TIMESTAMP WHERE id = ?", (int(unit_id),))
-                        db.commit()
-                        upload_db_to_s3()
+                    # Cascade delete: Unit -> Tenants -> Leases -> CollectedRents
+                    cur.execute("""
+                        UPDATE CollectedRent SET deleted_on = CURRENT_TIMESTAMP
+                        WHERE deleted_on IS NULL AND lease IN (
+                            SELECT l.id FROM Lease l
+                            JOIN Tenant t ON l.tenant = t.id
+                            WHERE t.unit = ? AND l.deleted_on IS NULL
+                        )
+                    """, (int(unit_id),))
+                    cur.execute("""
+                        UPDATE Lease SET deleted_on = CURRENT_TIMESTAMP
+                        WHERE deleted_on IS NULL AND tenant IN (
+                            SELECT id FROM Tenant WHERE unit = ? AND deleted_on IS NULL
+                        )
+                    """, (int(unit_id),))
+                    cur.execute("UPDATE Tenant SET deleted_on = CURRENT_TIMESTAMP WHERE unit = ? AND deleted_on IS NULL", (int(unit_id),))
+                    cur.execute("UPDATE Unit SET deleted_on = CURRENT_TIMESTAMP WHERE id = ?", (int(unit_id),))
+                    db.commit()
+                    upload_db_to_s3()
             return {"statusCode": 302, "headers": {"Location": "/admin/units"}, "body": ""}
 
     elif path.startswith("/admin/tenants"):
@@ -267,11 +281,17 @@ def lambda_handler(event, context):
             elif path == "/admin/tenants/delete":
                 tenant_id = form_data.get("id", [""])[0]
                 if tenant_id:
-                    cur.execute("SELECT COUNT(*) as cnt FROM Lease WHERE tenant = ? AND deleted_on IS NULL", (int(tenant_id),))
-                    if cur.fetchone()["cnt"] == 0:
-                        cur.execute("UPDATE Tenant SET deleted_on = CURRENT_TIMESTAMP WHERE id = ?", (int(tenant_id),))
-                        db.commit()
-                        upload_db_to_s3()
+                    # Cascade delete: Tenant -> Leases -> CollectedRents
+                    cur.execute("""
+                        UPDATE CollectedRent SET deleted_on = CURRENT_TIMESTAMP
+                        WHERE deleted_on IS NULL AND lease IN (
+                            SELECT id FROM Lease WHERE tenant = ? AND deleted_on IS NULL
+                        )
+                    """, (int(tenant_id),))
+                    cur.execute("UPDATE Lease SET deleted_on = CURRENT_TIMESTAMP WHERE tenant = ? AND deleted_on IS NULL", (int(tenant_id),))
+                    cur.execute("UPDATE Tenant SET deleted_on = CURRENT_TIMESTAMP WHERE id = ?", (int(tenant_id),))
+                    db.commit()
+                    upload_db_to_s3()
             return {"statusCode": 302, "headers": {"Location": "/admin/tenants"}, "body": ""}
 
     elif path.startswith("/admin/leases"):
@@ -332,11 +352,11 @@ def lambda_handler(event, context):
             elif path == "/admin/leases/delete":
                 lease_id = form_data.get("id", [""])[0]
                 if lease_id:
-                    cur.execute("SELECT COUNT(*) as cnt FROM CollectedRent WHERE lease = ? AND deleted_on IS NULL", (int(lease_id),))
-                    if cur.fetchone()["cnt"] == 0:
-                        cur.execute("UPDATE Lease SET deleted_on = CURRENT_TIMESTAMP WHERE id = ?", (int(lease_id),))
-                        db.commit()
-                        upload_db_to_s3()
+                    # Cascade delete: Lease -> CollectedRents
+                    cur.execute("UPDATE CollectedRent SET deleted_on = CURRENT_TIMESTAMP WHERE lease = ? AND deleted_on IS NULL", (int(lease_id),))
+                    cur.execute("UPDATE Lease SET deleted_on = CURRENT_TIMESTAMP WHERE id = ?", (int(lease_id),))
+                    db.commit()
+                    upload_db_to_s3()
             return {"statusCode": 302, "headers": {"Location": "/admin/leases"}, "body": ""}
 
     elif path.startswith("/admin/rents"):
