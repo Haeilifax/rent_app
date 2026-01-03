@@ -8,7 +8,10 @@
 </head>
 <body>
     <h1>{{ selected_date.strftime('%B %Y') }}</h1>
-    <button type="button" class="btn-secondary" onclick="document.getElementById('month-select-modal').showModal()">Change Month</button>
+    <div class="header-buttons">
+        <button type="button" class="btn-secondary" onclick="document.getElementById('month-select-modal').showModal()">Change Month</button>
+        <a href="/admin" class="btn-secondary">Admin</a>
+    </div>
     <dialog id="month-select-modal">
         <div class="modal-content">
             <button type="button" class="modal-close" onclick="document.getElementById('month-select-modal').close()">&times;</button>

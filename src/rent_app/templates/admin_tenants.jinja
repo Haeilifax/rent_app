@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/stylesheet.css">
+    <title>Admin - Tenants</title>
+</head>
+<body>
+    <h1>Manage Tenants</h1>
+
+    <nav class="admin-nav">
+        <a href="/admin">Back to Admin</a>
+        <a href="/">Back to App</a>
+    </nav>
+
+    <div class="add-form">
+        <h2>Add New Tenant</h2>
+        <form method="POST" action="/admin/tenants">
+            <div class="form-row">
+                <div class="form-field">
+                    <label for="name">Name</label>
+                    <input type="text" id="name" name="name" required placeholder="John Smith">
+                </div>
+                <div class="form-field">
+                    <label for="unit">Unit</label>
+                    <select id="unit" name="unit" required>
+                        <option value="">Select a unit...</option>
+                        {% for unit in units %}
+                        <option value="{{ unit.id }}">{{ unit.address }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <button type="submit">Add Tenant</button>
+        </form>
+    </div>
+
+    <form method="POST">
+        <div class="table-container">
+        <table>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Unit</th>
+                <th>Created</th>
+                <th>Actions</th>
+            </tr>
+            {% for tenant in tenants %}
+            <tr>
+                <td>{{ tenant.id }}</td>
+                <td><input type="text" name="name_{{ tenant.id }}" value="{{ tenant.name }}"></td>
+                <td>
+                    <select name="unit_{{ tenant.id }}">
+                        {% for unit in units %}
+                        <option value="{{ unit.id }}" {{ "selected" if unit.id == tenant.unit else "" }}>{{ unit.address }}</option>
+                        {% endfor %}
+                    </select>
+                </td>
+                <td>{{ tenant.created_on }}</td>
+                <td class="actions">
+                    <button type="submit" formaction="/admin/tenants/edit" name="id" value="{{ tenant.id }}" class="btn-action btn-save">Save</button>
+                    <button type="submit" formaction="/admin/tenants/delete" name="id" value="{{ tenant.id }}" class="btn-action btn-delete">Delete</button>
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+        </div>
+    </form>
+</body>
+</html>
