@@ -1558,3 +1558,47 @@ Okay, I've got the routing set up, but it's pointing everything at my pushups si
 - It looks like the recommended route is just use more distributions? https://old.reddit.com/r/aws/comments/ehkpdc/cloudfront_distributions_for_subdomains_how_do/
     - Gonna give it a try
 
+# 2026-01-03
+
+I'd like to ship v1.0 today. I'm basically there, I just need to make month selectable, and add real records to the db. Actually, looking back on the last time I thought about this, my priorities were:
+
+-[X] Commit last set of changes to main
+-[X] Start interpreting None as 0 for Amounts
+-[X] When calculating remaining rent, interpret None as 0
+-[] Allow month selection in UI (entails also making it dyanmically passable)
+-[] Add month name to top
+-[] Add ability to see each rent collection record
+-[] Add real-world tenants to DB
+-[] Test on mobile
+-[] Make any changes needed for mobile
+
+I completed the first 3. Month Selection, Month on Top, and Real World Tenants are the only remaining things (though I'll end up doing some mobile testing and maybe even changes afterwards).
+
+Taking this as today's task list, we're going to start with Month on Top, which should make Month Selection very easy.
+
+Plan is to change the current Month placeholder into two Select inputs, one for month (has twelve months) and one for year (we'll start with 2025 and 2026, stick with just manually adding a new year once a year for now). 
+
+Hmmm, actually, we'll want to display the rents for the selected month. The correct-est way would be to do some kind of AJAX, and replace our table with the appropriate table for that month. But the second best way would be to just have the change trigger a new page GET, and base our Month display on query params.
+
+We'll have a "Change Month" button, which will pop up a modal that will allow selecting a new Month and Year, with a button that will issue a GET for the chosen Month and Year.
+
+Button we know, making the button issue a GET I think we can just do with a Form and changing the action? Not certain, but worst case we make it a POST that redirects to the correct GET. Modal I'm not certain of, but I expect there's something easy out there (check MDN -- this might have been added to the HTML spec at some point? They're always throwing new stuff in). We'll also want to make the submit button for the main page form redirect to the same GET that we started with, so that the user can see their changes.
+
+First step, let's see if we can find out about making a modal
+
+https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/dialog
+- Easiest game of my life, they just keep making it better
+- Gross, still requires some JS:
+    - > JavaScript should be used to display the ,`<dialog>`, element. Use the .showModal() method to display a modal dialog and the .show() method to display a non-modal dialog. The dialog box can be closed using the .close() method or using the dialog method when submitting a `<form>` that is nested within the `<dialog>` element. Modal dialogs can also be closed by pressing the Esc key.
+
+Okay, so I'm going to:
+- [] Make Month at the top show the selected Month and Year (defaulting to this month)
+- [] Add a `<dialog>` tag to the page, with a form, `<select>` inputs for month and year, and a button that will issue a GET to the appropriate page
+- [] Add button that onclick will showmodal on the dialog 
+- [] Add a little `x` in the top right of the dialog, which will also close it
+- [] Base Month on the query params in the GET request 
+
+Oh, also, we discovered that we "should" use 303 http code vs 302 for the redirect PRG pattern.
+- [] Update to use 303 http code for POST redirect
+
+And done! Had claude do the CSS, which I think is going to be The Way forevermore, at least for any project that I need to just look decent, instead of needing a specific branding or deep accuracy to design
