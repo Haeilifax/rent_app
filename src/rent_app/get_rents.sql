@@ -17,6 +17,7 @@ LEFT JOIN
 WHERE
     l.deleted_on IS NULL
     AND date(l.start_date, 'start of month') <= date(:month, 'start of month')
-    AND (l.end_date IS NULL OR date(l.end_date, 'end of month') > date(:month, 'start of month'))
+    -- End of Month computation taken from https://www.sqlite.org/lang_datefunc.html
+    AND ((l.end_date IS NULL) OR (date(l.end_date,'start of month','+1 month','-1 day') > date(:month, 'start of month'))) 
 GROUP BY l.id -- We get to do this funky group by cause sqlite is cool
 ;
