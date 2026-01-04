@@ -1635,3 +1635,16 @@ Manual testing -- buttons are falling off the page. Let me have him fix that, an
 
 Fixed, and sent off.
 
+First results from testing are in -- we're seeing that in real-world use, we want to have end-dates already populated on Leases, and this is causing them not to show on the rent collection screen.
+
+We need the Leases for which the currently selected date is between them to show on the rent collection screen
+
+We're already trying to do that -- the sql for choosing what to show is:
+```
+WHERE
+    l.deleted_on IS NULL
+    AND date(l.start_date, 'start of month') <= date(:month, 'start of month')
+    AND (l.end_date IS NULL OR date(l.end_date, 'end of month') > date(:month, 'start of month'))
+```
+
+So why isn't it showing? Let's start by running the get_rents with a controlled month
