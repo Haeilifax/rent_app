@@ -50,12 +50,12 @@ All entities support soft deletes via a `deleted_on` timestamp column. Schema is
 
 **SQLite + S3 over a managed database**: For a low-traffic, single-user application, SQLite provides full ACID compliance and a relational model without the cost or complexity of RDS or DynamoDB. S3 provides durable persistence at minimal cost.
 
-**Concurrency = 1** — The necessary tradeoff for using a file-based database. Prevents write conflicts at the cost of request throughput, which is acceptable for this use case.
+**Concurrency = 1**: The necessary tradeoff for using a file-based database. Prevents write conflicts at the cost of request throughput, which is acceptable for this use case.
 
-**No authentication** — The Lambda Function URL is not publicly listed. Access control relies on keeping the URL private rather than an auth layer. Data here is not sensitive, and would not be an issue if it was found. There is also a CloudFront Distribution and url for this that is not in the publicly committed terraform for an easier link to bookmark.
+**No authentication**: The Lambda Function URL is not publicly listed. Access control relies on keeping the URL private rather than an auth layer. Data here is not sensitive, and would not be an issue if it was found. There is also a CloudFront Distribution and url for this that is not in the publicly committed terraform for an easier link to bookmark.
 
-**Soft deletes** — Records are marked with a `deleted_on` timestamp rather than removed. This preserves an audit trail and allows recovery of accidentally deleted data.
+**Soft deletes**: Records are marked with a `deleted_on` timestamp rather than removed. This preserves an audit trail and allows recovery of accidentally deleted data.
 
-**ARM64 (Graviton)** — AWS Graviton processors offer roughly 20% cost savings over x86 with equivalent performance.
+**ARM64 (Graviton)**: AWS Graviton processors offer roughly 20% cost savings over x86 with equivalent performance.
 
-**Server-side rendering** — Jinja2 templates keep the stack simple. The UI is forms and tables; there's no need for a client-side framework or a separate API.
+**Server-side rendering**: Jinja2 templates keep the stack simple. The UI is forms and tables; there's no need for a client-side framework or a separate API.
